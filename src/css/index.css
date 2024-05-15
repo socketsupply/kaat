@@ -1,0 +1,317 @@
+body {
+  background: var(--x-background-darkest);
+  color: var(--x-primary);
+
+  padding: 0;
+  margin: 0;
+  font-size: 14px;
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+  overflow: hidden;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  will-change: width, height;
+}
+
+main {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  border-radius: 12px 12px 0 0;
+  overflow: hidden;
+  will-change: transform;
+  background: var(--x-background);
+  box-shadow: 0 50vh 0 0 var(--x-background);
+}
+
+defs {
+  display: none;
+}
+
+.app-icon {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  will-change: transform;
+  transition: transform .1s ease;
+}
+
+.app-icon.rectangular {
+  border-radius: none;
+  border: none;
+  width: 40px;
+}
+
+.app-icon:hover {
+  transform: scale(1.1);
+}
+
+.app-icon:active {
+  transform: scale(0.9);
+}
+
+button {
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+button:focus,
+button {
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:active {
+  background: transparent;
+}
+
+header.draggable {
+  app-region: drag;
+  --app-region: drag;
+  user-select: none;
+  -webkit-user-select: non1;
+}
+
+#messages {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--x-window);
+  position: fixed;
+  top: 0;
+  left: 0;
+  user-select: none;
+  will-change: transform, width;
+  overflow: hidden;
+  box-shadow: 0px 0px 24px -10px rgba(0, 0, 0, 1);
+  z-index: 2;
+
+  #input {
+    position: relative;
+    padding: 12px;
+    background: var(--x-input-background);
+    border-radius: 6px;
+  }
+
+  #input input {
+    color: var(--x-primary);
+    background: transparent;
+    border: none;
+    padding: 0;
+    width: 100%;
+    font-size: 16px;
+    outline: none;
+  }
+
+  #input #send-message {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+  }
+
+  .content {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    margin: 0;
+    padding: 0 20px 20px;
+  }
+
+  .buffer-wrapper {
+    position: relative;
+  }
+
+  #message-buffer {
+    overflow-y: auto;
+    position: absolute;
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    bottom: 0;
+    display: flex;
+    flex-direction: column-reverse;
+    transition: bottom 0.35s ease-out; 
+    will-change: bottom, height;
+  }
+
+  .buffer-content {
+      display: flex;
+      flex-direction: column-reverse;
+      width: 100%;
+  }
+
+  .message {
+      padding: 8px;
+      margin: 4px;
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+  }
+}
+
+.view {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr; 
+}
+
+.view > header {
+  display: grid;
+  text-align: center;
+  align-items: center;
+  height: 50px;
+  background: var(--x-background-overlay);
+  align-content: center;
+  position: relative;
+}
+
+#profile.view > header {
+  background: transparent;
+}
+
+.content {
+  margin: 20px;
+}
+
+#sidebar-toggle {
+  position: fixed;
+  top: 10px;
+  left: 80px;
+  width: 42px;
+  height: 32px;
+  z-index: 3;
+}
+
+#profile {
+  position: absolute;
+  height: 100vh;
+  width: 100vw;
+  transform: translateY(100%) scale(0.95);
+  opacity: 0;
+  background: var(--x-window);
+  z-index: 4;
+  will-change: transform;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0px 0px 24px -10px rgba(0, 0, 0, 1);
+}
+
+#profile-open {
+  width: fit-content;
+  background: transparent;
+  width: 32px;
+  height: 32px;
+}
+
+#profile-close {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 34px;
+  height: 50px;
+  border-radius: 12px;
+  background: transparent;
+  font-size: 22px;
+  border: none;
+  -webkit-appearance: none;
+}
+
+#sidebar {
+  position: absolute;
+  top: 0;
+  height: 100vh;
+  width: 100vw;
+  background-color: red;
+  transform: scale(0.95);
+  opacity: 0;
+  z-index: 1;
+  will-change: transform;
+  background: var(--x-background);
+
+  header {
+    .content {
+      grid-template-columns: 1fr;
+      display: grid;
+      justify-content: end;
+      margin: 0;
+      width: 280px;
+
+      #profile-open {
+        place-self: end;
+      }
+    }
+  }
+ 
+  > .content {
+    width: 240px;
+  }
+
+  .group,
+  .channel {
+    padding: 8px;
+    font-size: 16px;
+    border-radius: 8px;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  .channel {
+    text-indent: 16px;
+  }
+}
+
+/**
+ ** Anything ios specific
+ */
+body[platform="ios"] {
+  .view > header.primary {
+    height: 120px;
+  }
+
+  #sidebar-toggle {
+    left: 10px;
+    top: 68px;
+  }
+
+  #profile-open {
+    margin-top: 48px;
+    margin-right: 10px;
+  }
+
+  #profile,
+  main {
+    border-radius: 30px 30px 0 0;
+  }
+
+  #messages {
+    .title {
+      margin-top: 48px;
+    }
+
+    #input {
+      margin-bottom: 20px;
+    }
+  }
+}
+
+/**
+ ** Anything sepcific to running on the desktop
+ */
+body[hardware="desktop"] {
+}
+
+/**
+ ** Anything sepcific to the keyboard being open
+ */
+body[keyboard="true"] {
+  #messages #input {
+    margin-bottom: 0px;
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "kaat",
+  "private": true,
+  "version": "0.0.2",
+  "type": "module",
+  "scripts": {
+    "start": "ssc build -r",
+    "test": "npm run test:standard && npm run test:integration",
+    "build": "ssc build",
+    "test:standard": "standard",
+    "test-skip:standalone": "ssc build --headless -r -o test",
+    "test:integration": "ssc build -r -o --test=./test/index.js"
+  },
+  "dependencies": {
+    "@socketsupply/components": "^14.0.13",
+    "@socketsupply/tonic": "^15.1.1",
+    "clean-css": "^5.3.2",
+    "nice-bytes": "^1.1.0"
+  },
+  "devDependencies": {
+    "@socketsupply/socket": "^0.5.0",
+    "esbuild": "^0.16.17",
+    "standard": "^17.0.0"
+  }
+}

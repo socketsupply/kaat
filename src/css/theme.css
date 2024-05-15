@@ -1,0 +1,124 @@
+* {
+  font-family: monospace;
+}
+
+@media (prefers-color-scheme: light) {
+  body {
+    --x-background: rgba(245, 245, 245, 1);
+    --x-background-dark: rgba(220, 220, 220, 1);
+    --x-background-darker: rgba(235, 235, 235, 1);
+    --x-background-darkest: rgba(200, 200, 200, 1);
+    --x-background-overlay: rgba(170, 170, 170, 0.12);
+    --x-background-selected: rgba(220, 220, 220, 0.3);
+    --x-window: rgba(255, 255, 255, 1);
+    --x-accent: rgba(35, 129, 204, 1);
+    --x-primary: rgba(54, 57, 61, 1);
+    --x-secondary: rgba(160, 160, 160, 1);
+    --x-light: rgba(153, 157, 160, 1);
+    --x-medium: rgba(153, 157, 160, 1);
+    --x-shadow: rgba(120, 120, 120, 0.5);
+    --x-dark: rgba(54, 57, 61, 1);
+    --x-disabled: rgba(152, 161, 175, 1);
+    --x-button-text: rgba(54, 57, 61, 1);
+    --x-button-shadow: rgba(0, 0, 0, 33%);
+    --x-button-background: rgba(236, 236, 236, 1);
+    --x-button-background-hover: rgba(230, 230, 230, 1);
+    --x-button-background-focus: rgba(237, 237, 237, 1);
+    --x-input-text: rgba(54, 57, 61, 1);
+    --x-input-text-hover: rgba(228, 228, 228, 1);
+    --x-input-border: rgba(201, 201, 201, 1);
+    --x-input-border-hover: rgba(54, 57, 61, 1);
+    --x-input-background: rgba(236, 236, 236, 1);
+    --x-input-background-focus: rgba(216, 216, 216, 1);
+    --x-border: rgba(224, 224, 224, 1);
+    --x-border-accent: rgba(206, 206, 206, 1);
+    --x-error: rgba(240, 102, 83, 1);
+    --x-notification: rgba(240, 102, 83, 1);
+    --x-danger: rgba(240, 102, 83, 1);
+    --x-success: rgba(133, 178, 116, 1);
+    --x-warning: rgba(249, 169, 103, 1);
+    --x-info: rgba(153, 157, 160, 1);
+    --x-overlay: rgba(255, 255, 255, 0.75);
+
+    --x-avatar-bg-0: #B5E1FF;
+    --x-avatar-bg-1: #A6D7F7;
+    --x-avatar-bg-2: #97CCF0;
+    --x-avatar-bg-3: #89C2E8;
+    --x-avatar-bg-4: #7BB8E0;
+    --x-avatar-bg-5: #91D2FF;
+    --x-avatar-bg-6: #83C9F7;
+    --x-avatar-bg-7: #75BFF0;
+    --x-avatar-bg-8: #68B5E8;
+    --x-avatar-bg-9: #5CABE0;
+    --x-avatar-bg-10: #66C1FF;
+    --x-avatar-bg-11: #5BB6F5;
+    --x-avatar-bg-12: #50ADEB;
+    --x-avatar-bg-13: #46A2E0;
+    --x-avatar-bg-14: #3C99D6;
+    --x-avatar-bg-15: #2FA6F7;
+    --x-avatar-bg-16: #269DED;
+    --x-avatar-bg-17: #1E94E3;
+    --x-avatar-bg-18: #168AD9;
+    --x-avatar-bg-19: #0E81CF;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    --x-background: rgba(40, 40, 40, 1);
+    --x-background-dark: rgba(10, 10, 10, 1);
+    --x-background-darker: rgba(32, 32, 32, 1);
+    --x-background-darkest: rgba(0, 0, 0, 1);
+    --x-background-overlay: rgba(0, 0, 0, 0.12);
+    --x-background-selected: rgba(0, 0, 0, 0.3);
+    --x-window: rgba(46, 46, 46, 1);
+    --x-accent: rgba(56, 185, 255, 1);
+    --x-primary: rgba(242, 242, 242, 1);
+    --x-secondary: rgba(120, 120, 120, 1);
+    --x-medium: rgba(153, 157, 160, 1);
+    --x-dark: rgba(41, 41, 41, 1);
+    --x-shadow: rgba(0, 0, 0, 0.3);
+    --x-disabled: rgba(170, 170, 170, 1);
+    --x-button-text: rgba(255, 255, 255, 1);
+    --x-button-shadow: rgba(0, 0, 0, 1);
+    --x-button-background: rgba(56, 56, 56, 1);
+    --x-button-background-hover: rgba(94, 94, 94, 1);
+    --x-button-background-focus: rgba(84, 84, 84, 1);
+    --x-input-text: rgba(255, 255, 255, 1);
+    --x-input-text-hover: rgba(255, 255, 255, 1);
+    --x-input-background: rgba(33, 33, 33, 1);
+    --x-input-background-focus: rgba(20, 20, 20, 1);
+    --x-input-border: rgba(80, 80, 80, 1);
+    --x-input-border-hover: rgba(105, 105, 105, 1);
+    --x-border: rgba(72, 72, 72, 1);
+    --x-border-accent: rgba(90, 90, 90, 1);
+    --x-error: rgba(240, 102, 83, 1);
+    --x-notification: rgba(240, 102, 83, 1);
+    --x-caution: rgba(240, 102, 83, 1);
+    --x-success: rgba(133, 178, 116, 1);
+    --x-warning: rgba(249, 169, 103, 1);
+    --x-info: rgba(72, 72, 72, 1);
+    --x-overlay: rgba(0, 0, 0, 0.40);
+
+    --x-avatar-bg-0: #C7E8FF;
+    --x-avatar-bg-1: #B8DFFC;
+    --x-avatar-bg-2: #AAD6FA;
+    --x-avatar-bg-3: #9CCDF7;
+    --x-avatar-bg-4: #8EC3F5;
+    --x-avatar-bg-5: #9CD6FF;
+    --x-avatar-bg-6: #8DCCFC;
+    --x-avatar-bg-7: #7FC3FA;
+    --x-avatar-bg-8: #72B9F7;
+    --x-avatar-bg-9: #64AFF5;
+    --x-avatar-bg-10: #78C8FF;
+    --x-avatar-bg-11: #64BBFA;
+    --x-avatar-bg-12: #51AEF5;
+    --x-avatar-bg-13: #3EA0F0;
+    --x-avatar-bg-14: #2D92EB;
+    --x-avatar-bg-15: #47A7F5;
+    --x-avatar-bg-16: #369DF7;
+    --x-avatar-bg-17: #2593FA;
+    --x-avatar-bg-18: #1488FC;
+    --x-avatar-bg-19: #0378FF;
+  }
+}

@@ -1,0 +1,2 @@
+const network = {}
+export { network }

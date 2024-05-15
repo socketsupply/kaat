@@ -1,0 +1,39 @@
+name: build
+
+on:
+  workflow_dispatch:
+
+env:
+  node_version: 'lts/*'
+  FORCE_COLOR: 1
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macOS-13]
+
+    steps:
+    - name: Checkout kaat repo
+      uses: actions/checkout@v4
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ env.node_version }}
+        registry-url: 'https://npm.pkg.github.com'
+
+    - run: npm i
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_PAT }}
+    - run: npm run build
+    - name: Archive build
+      uses: actions/upload-artifact@v3
+      with:
+        name: kaat-dev-build
+        path: dist/mac
+

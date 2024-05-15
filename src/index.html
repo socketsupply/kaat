@@ -1,0 +1,125 @@
+<!doctype html>
+<html>
+  <head>
+    <html lang="en">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta
+      http-equiv="content-security-policy"
+      content="
+        connect-src socket: npm: https: http: blob: ipc: wss: ws: ws://localhost:*;
+         script-src socket: npm: node: https: http: blob: http://localhost:* 'unsafe-eval' 'unsafe-inline';
+         worker-src socket: https: http: blob: 'unsafe-eval' 'unsafe-inline';
+          frame-src socket: https: http: blob: http://localhost:*;
+            img-src socket: https: http: blob: data: http://localhost:*;
+          child-src socket: https: http: blob:;
+         object-src 'none';
+      "
+    >
+    <script src="index.js" type="module"></script>
+
+    <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/index.css">
+  </head>
+  <body>
+    <defs>
+      <svg id="profile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="20" height="20">
+        <path fill="var(--x-primary)" d="M49.9978 100C77.4559 100 100 77.4595 100 50C100 22.5405 77.4513 0 49.9931 0C22.4785 0 0 22.5405 0 50C0 77.4595
+        22.4831 100 49.9978 100ZM49.9978 96.9843C24.0564 96.9843 2.96374 75.9471 2.96374 50C2.96374 24.0529 24.0519 3.01562 49.9931 3.01562C75.9389
+        3.01562 96.9798 24.0529 96.9798 50C96.9798 75.9471 75.9435 96.9843 49.9978 96.9843ZM84.493 82.8847L84.4791 82.6558C81.0203 75.6532 67.9845
+        66.7276 49.9978 66.7276C32.133 66.7276 19.1016 75.5922 15.5208 82.4729L15.5071 82.8847C24.3975 92.1841 36.664 98.2193 50.0587 98.2193C63.5798
+        98.2193 75.1756 92.4281 84.493 82.8847ZM49.9978 57.8264C59.8397 57.8355 67.3391 49.436 67.3391 38.535C67.3391 28.2898 59.6568 19.637 49.9978
+        19.637C40.3433 19.637 32.5953 28.2898 32.6608 38.535C32.6655 49.436 40.1557 57.8171 49.9978 57.8264Z" />
+      </svg>
+
+      <svg id="close-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="20" height="20">
+        <path fill="var(--x-primary)" d="M80.7,22.6l-3.5-3.5c-0.1-0.1-0.3-0.1-0.4,0L50,45.9L23.2,19.1c-0.1-0.1-0.3-0.1-0.4,0l-3.5,3.5c-0.1,0.1-0.1,0.3,0,0.4
+          l26.8,26.8L19.3,76.6c-0.1,0.1-0.1,0.3,0,0.4l3.5,3.5c0,0,0.1,0.1,0.2,0.1s0.1,0,0.2-0.1L50,53.6l25.9,25.9c0.1,0.1,0.3,0.1,0.4,0
+          l3.5-3.5c0.1-0.1,0.1-0.3,0-0.4L53.9,49.8l26.8-26.8C80.8,22.8,80.8,22.7,80.7,22.6z"/>
+      </svg>
+
+      <svg id="sidebar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="40" height="20">
+        <path fill="var(--x-primary)" stroke="var(--x-primary)" stroke-width="0.5" d="M13.735 86H87.2651C94.2791 86 98 82.189 98 75.297V24.7029C98 17.8109
+        94.2791 14 87.2651 14H13.735C6.72462 14 3 17.7136 3 24.7029V75.297C3 82.2864 6.72462 86 13.735 86ZM13.8398 83.6199C8.26159 83.6199 5.38101
+        80.756 5.38101 75.1741V24.8259C5.38101 19.2477 8.26159 16.38 13.8398 16.38H87.1602C92.5434 16.38 95.619 19.2477 95.619 24.8259V75.1741C95.619
+        80.756 92.5434 83.6199 87.1602 83.6199H13.8398ZM32.2777 84.1604H34.6477V15.3639H32.2777V84.1604ZM24.4594 31.7473C25.1435 31.7473 25.618 31.2215
+        25.618 30.5911C25.618 30.0092 25.1435 29.4907 24.4594 29.4907H13.2066C12.5261 29.4907 12.003 30.0092 12.003 30.5911C12.003 31.2215 12.5261
+        31.7473 13.2066 31.7473H24.4594ZM24.4594 42.9897C25.1435 42.9897 25.618 42.4676 25.618 41.8821C25.618 41.2517 25.1435 40.7332 24.4594
+        40.7332H13.2066C12.5261 40.7332 12.003 41.2517 12.003 41.8821C12.003 42.4676 12.5261 42.9897 13.2066 42.9897H24.4594ZM24.4594 54.1834C25.1435
+        54.1834 25.618 53.7099 25.618 53.0796C25.618 52.4491 25.1435 51.9792 24.4594 51.9792H13.2066C12.5261 51.9792 12.003 52.4491 12.003 53.0796C12.003
+        53.7099 12.5261 54.1834 13.2066 54.1834H24.4594Z" />
+      </svg>
+
+      <svg id="send-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="20" height="20">
+        <path fill="var(--x-primary)" d="M57.2555 95C59.3291 95 60.8129 93.6391 61.9104 90.6363L94.4412 5.47585C94.8486 4.45303 95 3.62114 95 2.8713C95
+        1.05383 93.9462 0 92.1286 0C91.3789 0 90.547 0.151311 89.5284 0.558793L4.32959 33.05C1.37368 34.1829 0 35.6708 0 37.7445C0 40.0078 1.45152
+        41.1886 5.01125 42.2522L41.9877 52.96L52.7435 89.9547C53.7505 93.4792 54.9357 95 57.2555 95ZM42.7801 50.2886L5.87476 39.6417C3.4698 38.9546
+        2.89577 38.4893 2.89577 37.6848C2.89577 36.8761 3.5221 36.2979 5.36578 35.6064L87.4729 4.25975C88.8497 3.74891 90.2702 3.09099 91.0163
+        2.785C90.1389 3.44604 87.8008 5.26787 87.1963 5.87237L42.7801 50.2886ZM57.3194 92.0562C56.5107 92.0562 56.0497 91.5302 55.3584 89.1818L44.6547
+        52.2765L89.1276 7.8079C89.6798 7.25571 91.5059 4.96999 92.2758 4.03161C91.9132 4.77783 91.3076 6.14597 90.7402 7.47465L59.3936 89.6342C58.7021
+        91.4779 58.1282 92.0562 57.3194 92.0562Z" />
+      </svg>
+    </defs>
+
+    <main>
+      <x-view id="messages" class="messages view">
+        <header class="primary draggable">
+          <span class="title">#P2P</span>
+        </header>
+        <div class="content">
+
+          <div class="buffer-wrapper">
+            <div id="message-buffer">
+              <div class="buffer-content">
+              </div>
+            </div>
+          </div>
+
+          <div id="input">
+            <input type="text" placeholder="Type a message in #P2P"/>
+            <button id="send-message">
+              <svg class="app-icon"><use xlink:href="#send-icon"/></svg>
+            </button>
+          </div>
+
+        </div>
+      </x-view>
+
+      <button id="sidebar-toggle">
+        <svg class="app-icon rectangular"><use xlink:href="#sidebar-icon"/></svg>
+      </button>
+
+      <x-view id="sidebar" class="view">
+        <header class="primary draggable">
+          <div class="content">
+            <button id="profile-open">
+              <svg class="app-icon"><use xlink:href="#profile-icon"/></svg>
+            </button>
+          </div>
+        </header>
+
+        <div class="content">
+          <div class="group">Socket Supply</div>
+          <div class="channel">#P2P</div>
+          <div class="group">Fork Town</div>
+          <div class="channel">#Frontend</div>
+          <div class="channel">#Gaming</div>
+        </div>
+      </x-view>
+    </main>
+
+    <aside>
+      <x-view id="profile" class="view">
+        <header class="draggable">
+          <span>Profile</span>
+          <button id="profile-close">
+            <svg class="app-icon"><use xlink:href="#close-icon"/></svg>
+          </button>
+        </header>
+        <div class="content">
+        </div>
+      </x-view>
+    </aside>
+  </body>
+</html>

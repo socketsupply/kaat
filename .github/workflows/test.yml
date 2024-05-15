@@ -1,0 +1,38 @@
+name: tests
+
+on: [pull_request, push]
+
+env:
+  FORCE_COLOR: 1
+
+concurrency:
+  group: socket-relay-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macOS-13]
+        #os: [ubuntu-latest]
+        node: ['lts/*']
+
+    steps:
+    - name: Checkout relay repo
+      uses: actions/checkout@v4
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        registry-url: 'https://npm.pkg.github.com'
+
+    - run: npm i
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_PAT }}
+    - run: npx ssc --version
+    - run: npm test

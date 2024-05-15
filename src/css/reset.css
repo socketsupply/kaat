@@ -1,0 +1,25 @@
+* {
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: #fff700;
+}
+
+input, select:focus, textarea {
+  -webkit-user-select: initial;
+  -webkit-user-drag: initial;
+}
+
+a, a:visited, a:active {
+  color: var(--x-accent);
+  text-decoration: none;
+  border-bottom: 1px dashed;
+  word-break: break-all;
+}

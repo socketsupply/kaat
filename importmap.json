@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "@socketsupply/indexed": "npm:@socketsupply/indexed"
+  }
+}
