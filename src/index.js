@@ -1,6 +1,5 @@
 import process from 'socket:process'
 import { network } from './lib/network.js'
-import { initializeViews } from './lib/views.js'
 // import { db } from './lib/data.js'
 
 import './views/profile/index.js'
@@ -26,7 +25,7 @@ function addPlaceholderData () {
 // assign hidden to the overflow that is causing the scroll.
 //
 function addScrollCancel () {
-  if (!isMobile) return
+  /* if (!isMobile) return
 
   const elBuffer = document.getElementById('message-buffer')
   const elInput = document.getElementById('input')
@@ -37,7 +36,7 @@ function addScrollCancel () {
     setTimeout(() => {
       elBuffer.style.overflowY = 'auto'
     }, 128)
-  })
+  }) */
 }
 
 //
@@ -66,5 +65,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
   addPlaceholderData()
   addScrollCancel(isMobile)
-  initializeViews()
 })

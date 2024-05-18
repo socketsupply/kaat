@@ -1,4 +1,4 @@
-import { views } from '../../lib/views.js'
+import { components } from '../../lib/components.js'
 import process from 'socket:process'
 
 const isMobile = ['android', 'ios'].includes(process.platform)
@@ -6,7 +6,7 @@ const vProfilePositionTop = isMobile ? 90 : 48
 const vProfileTransformOrigin = isMobile ? 100 : 80
 const vProfileTransformMag = isMobile ? 0.5 : 0.08
 
-views.profile = function () {
+components.profile = function () {
   const elMain = document.querySelector('main')
 
   this.axis = 'Y'

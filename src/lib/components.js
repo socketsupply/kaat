@@ -1,8 +1,43 @@
-const views = {}
+const components = {}
 
-const initializeViews = () => {
+ document.addEventListener('DOMContentLoaded', () => {
   /**
+   *
+   * Standard dialogs suck. Along with a little CSS we can fix that.
+   *
+   */
+  customElements.define('x-dialog', class extends HTMLDialogElement {
+    constructor () {
+      super()
+
+      if (this.id && typeof components[this.id] === 'function') {
+        components[this.id].call(this)
+      }
+    }
+
+    show () {
+      this.showModal()
+      window.requestAnimationFrame(() => this.classList.add('showing'))
+    }
+
+    hide () {
+      this.classList.remove('showing')
+
+      function onCloseTransitionEnd() {
+        if (!dialog.classList.contains('showing')) {
+          this.close()
+          this.removeEventListener('transitionend', onCloseTransitionEnd)
+        }
+      }
+
+      this.addEventListener('transitionend', onCloseTransitionEnd)
+    }
+  })
+
+  /**
+   *
    * SpringView is a web component that helps create animated interactivei content views.
+   *
    */
   customElements.define('x-view', class extends HTMLElement {
     /**
@@ -76,8 +111,8 @@ const initializeViews = () => {
       document.addEventListener('mouseup', end)
       document.addEventListener('touchend', end)
 
-      if (this.id && typeof views[this.id] === 'function') {
-        views[this.id].call(this)
+      if (this.id && typeof components[this.id] === 'function') {
+        components[this.id].call(this)
       }
     }
 
@@ -290,6 +325,6 @@ const initializeViews = () => {
       }
     }
   })
-}
+})
 
-export { views, initializeViews }
+export { components }

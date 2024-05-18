@@ -1,7 +1,7 @@
-import { views } from '../../lib/views.js'
+import { components } from '../../lib/components.js'
 import process from 'socket:process'
 
-views.sidebar = function () {
+components.sidebar = function () {
   const coMessages = document.getElementById('messages')
   const elSidebarToggle = document.getElementById('sidebar-toggle')
 

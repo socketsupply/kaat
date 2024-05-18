@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@socketsupply/components": "^14.0.13",
+    "@socketsupply/indexed": "^1.0.3",
     "@socketsupply/tonic": "^15.1.1",
     "clean-css": "^5.3.2",
     "nice-bytes": "^1.1.0"

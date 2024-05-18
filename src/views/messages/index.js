@@ -1,9 +1,9 @@
-import { views } from '../../lib/views.js'
+import { components } from '../../lib/components.js'
 import process from 'socket:process'
 
 let isPanning = false
 
-views.messages = function () {
+components.messages = function () {
   const elMain = document.querySelector('main')
   const elBuffer = document.getElementById('message-buffer')
   const elSidebar = document.getElementById('sidebar')
@@ -75,6 +75,10 @@ views.messages = function () {
 
   this.complete = () => {
     elBuffer.style.overflow = 'auto'
+  }
+
+  this.addMessage = (...args) => {
+    // this.appendChild(...args)
   }
 }
 
