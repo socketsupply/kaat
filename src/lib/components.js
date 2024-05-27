@@ -6,7 +6,7 @@ const components = {}
    * Standard dialogs suck. Along with a little CSS we can fix that.
    *
    */
-  customElements.define('x-dialog', class extends HTMLDialogElement {
+  class XDialog extends HTMLDialogElement {
     constructor () {
       super()
 
@@ -32,7 +32,8 @@ const components = {}
 
       this.addEventListener('transitionend', onCloseTransitionEnd)
     }
-  })
+  }
+  customElements.define('x-dialog', XDialog, { extends: 'dialog' })
 
   /**
    *

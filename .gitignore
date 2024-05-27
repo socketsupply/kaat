@@ -8,6 +8,9 @@ tmp.txt
 # Ignore Gradle project-specific cache directory
 .gradle
 
+# Don't commit models to Github
+/src/models/*
+
 # Ignore Gradle build output directory
 build
 .sscrc

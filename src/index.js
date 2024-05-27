@@ -1,6 +1,7 @@
 import process from 'socket:process'
+import { LLM } from 'socket:ai'
 import { network } from './lib/network.js'
-// import { db } from './lib/data.js'
+import { db } from './lib/data.js'
 
 import './views/profile/index.js'
 import './views/messages/index.js'
@@ -20,26 +21,6 @@ function addPlaceholderData () {
 }
 
 //
-// A long scroll event can block the keyboard show event
-// The way to ensure this doesn't happen is to just temporarily
-// assign hidden to the overflow that is causing the scroll.
-//
-function addScrollCancel () {
-  /* if (!isMobile) return
-
-  const elBuffer = document.getElementById('message-buffer')
-  const elInput = document.getElementById('input')
-
-  elInput.addEventListener('click', () => {
-    elBuffer.style.overflowY = 'hidden'
-
-    setTimeout(() => {
-      elBuffer.style.overflowY = 'auto'
-    }, 128)
-  }) */
-}
-
-//
 // We want to know if the keyboard is displayed, the layout should
 // change slightly when the input moves away from the bottom bevel.
 //
@@ -53,6 +34,27 @@ window.addEventListener('keyboard', ({ detail }) => {
   }
 })
 
+const llm = window.llm = new LLM({
+  path: 'model.gguf',
+  prompt: 'You are a coding assistant.'
+})
+
+let elCurrentMessage = null
+
+llm.on('end', () => {
+  elCurrentMessage = null
+})
+
+llm.on('data', data => {
+  if (!elCurrentMessage) {
+    const messagesContainer = document.querySelector('#message-buffer .buffer-content')
+    elCurrentMessage = document.createElement('div')
+    messageContainer.appendChild(elCurrentMessage)
+  }
+
+  elCurrentMessage.appendChild(document.createTextNode(data))
+})
+
 document.addEventListener('DOMContentLoaded', () => {
   document.body.setAttribute('platform', process.platform)
 
@@ -64,5 +66,4 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   addPlaceholderData()
-  addScrollCancel(isMobile)
 })
