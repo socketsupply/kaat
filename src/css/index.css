@@ -1,5 +1,5 @@
 body {
-  background: var(--x-background-darkest);
+  background: transparent;
   color: var(--x-primary);
 
   padding: 0;
@@ -14,7 +14,13 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  will-change: width, height;
+  will-change: width, height, opacity;
+  opacity: 1;
+  transition: opacity 1s ease-in-out;
+}
+
+body.loading {
+  opacity: 0;
 }
 
 main {
@@ -99,9 +105,11 @@ header.draggable {
     padding: 12px;
     background: var(--x-input-background);
     border-radius: 6px;
+    height: auto;
+    margin: 20px;
   }
 
-  #input input {
+  #input #input-message {
     color: var(--x-primary);
     background: transparent;
     border: none;
@@ -109,6 +117,7 @@ header.draggable {
     width: 100%;
     font-size: 16px;
     outline: none;
+    padding-right: 32px;
   }
 
   #input #send-message {
@@ -121,7 +130,6 @@ header.draggable {
     display: grid;
     grid-template-rows: 1fr auto;
     margin: 0;
-    padding: 0 20px 20px;
   }
 
   .buffer-wrapper {
@@ -139,19 +147,36 @@ header.draggable {
     flex-direction: column-reverse;
     transition: bottom 0.35s ease-out; 
     will-change: bottom, height;
+    padding: 0 20px;
   }
 
   .buffer-content {
-      display: flex;
-      flex-direction: column-reverse;
-      width: 100%;
+    display: flex;
+    flex-direction: column-reverse;
+    width: 100%;
+    padding: 8px 0;
   }
 
   .message {
-      padding: 8px;
-      margin: 4px;
-      background-color: #f9f9f9;
-      border: 1px solid #ddd;
+    white-space: break-spaces;
+    padding: 8px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin: 8px 0;
+    line-height: 22px;
+    max-width: 90%;
+    overflow: auto;
+
+    &.mine {
+      place-self: end;
+      background: var(--x-border);
+      border-bottom-right-radius: 0;
+    }
+
+    &:not(.mine) {
+      border-bottom-left-radius: 0;
+    }
   }
 }
 
@@ -235,14 +260,22 @@ header.draggable {
 
   header {
     .content {
-      grid-template-columns: 1fr;
+      grid-template-columns: 1fr auto auto;
       display: grid;
       justify-content: end;
       margin: 0;
       width: 280px;
-
+      padding-right: 10px;
+      
+      #add-group,
       #profile-open {
         place-self: end;
+
+        svg {
+          width: 32px;
+          height: 32px;
+          padding: 6px;
+        }
       }
     }
   }
@@ -256,9 +289,22 @@ header.draggable {
     padding: 8px;
     font-size: 16px;
     border-radius: 8px;
+    position: relative;
+    height: 34px;
+
+    button {
+      position: absolute;
+      right: 8px;
+      top: 6px;
+      display: none;
+    }
 
     &:hover {
       background: rgba(0, 0, 0, 0.1);
+
+      button {
+        display: block;
+      }
     }
   }
 
@@ -296,7 +342,7 @@ body[platform="ios"] {
     }
 
     #input {
-      margin-bottom: 20px;
+      margin: 20px 20px 40px;
     }
   }
 }
@@ -305,6 +351,21 @@ body[platform="ios"] {
  ** Anything sepcific to running on the desktop
  */
 body[hardware="desktop"] {
+  #messages {
+
+    /* Allow messages to be selected on desktop. */
+    /* On mobile, show a copy button */
+    .message {
+      user-select: initial;
+      -webkit-user-select: initial;
+    }
+  }
+}
+
+body[hardware="mobile"] {
+  header.primary {
+    border-bottom: 1px solid var(--x-border);
+  }
 }
 
 /**
@@ -312,6 +373,6 @@ body[hardware="desktop"] {
  */
 body[keyboard="true"] {
   #messages #input {
-    margin-bottom: 0px;
+    margin-bottom: 20px;
   }
 }

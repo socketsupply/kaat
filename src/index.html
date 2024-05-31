@@ -16,13 +16,11 @@
          object-src 'none';
       "
     >
-    <script src="index.js" type="module"></script>
-
     <link rel="stylesheet" href="css/theme.css">
     <link rel="stylesheet" href="css/reset.css">
     <link rel="stylesheet" href="css/index.css">
   </head>
-  <body>
+  <body class="loading">
     <defs>
       <svg id="profile-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="20" height="20">
         <path fill="var(--x-primary)" d="M49.9978 100C77.4559 100 100 77.4595 100 50C100 22.5405 77.4513 0 49.9931 0C22.4785 0 0 22.5405 0 50C0 77.4595
@@ -37,6 +35,11 @@
         <path fill="var(--x-primary)" d="M80.7,22.6l-3.5-3.5c-0.1-0.1-0.3-0.1-0.4,0L50,45.9L23.2,19.1c-0.1-0.1-0.3-0.1-0.4,0l-3.5,3.5c-0.1,0.1-0.1,0.3,0,0.4
           l26.8,26.8L19.3,76.6c-0.1,0.1-0.1,0.3,0,0.4l3.5,3.5c0,0,0.1,0.1,0.2,0.1s0.1,0,0.2-0.1L50,53.6l25.9,25.9c0.1,0.1,0.3,0.1,0.4,0
           l3.5-3.5c0.1-0.1,0.1-0.3,0-0.4L53.9,49.8l26.8-26.8C80.8,22.8,80.8,22.7,80.7,22.6z"/>
+      </svg>
+
+      <svg id="plus-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="20" height="20">
+        <line fill="none" stroke="var(--x-primary)" stroke-width="4" stroke-miterlimit="0" x1="46.5" y1="15.4" x2="46.5" y2="86.7"/>
+        <line fill="none" stroke="var(--x-primary)" stroke-width="4" stroke-miterlimit="0" x1="82.2" y1="51.1" x2="10.9" y2="51.1"/>
       </svg>
 
       <svg id="sidebar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="40" height="20">
@@ -77,7 +80,7 @@
           </div>
 
           <div id="input">
-            <input type="text" placeholder="Type a message in #P2P"/>
+            <div id="input-message" type="text" placeholder="Type a message in #P2P" contenteditable></div>
             <button id="send-message">
               <svg class="app-icon"><use xlink:href="#send-icon"/></svg>
             </button>
@@ -93,6 +96,9 @@
       <x-view id="sidebar" class="view">
         <header class="primary draggable">
           <div class="content">
+            <button id="add-group">
+              <svg class="app-icon"><use xlink:href="#plus-icon"/></svg>
+            </button>
             <button id="profile-open">
               <svg class="app-icon"><use xlink:href="#profile-icon"/></svg>
             </button>
@@ -100,7 +106,12 @@
         </header>
 
         <div class="content">
-          <div class="group">Socket Supply</div>
+          <div class="group">
+            <span>Socket Supply</span>
+            <button id="add-channel">
+              <svg class="app-icon"><use xlink:href="#plus-icon"/></svg>
+            </button>
+          </div>
           <div class="channel">#P2P</div>
           <div class="group">Fork Town</div>
           <div class="channel">#Frontend</div>
@@ -125,5 +136,7 @@
     <dialog is="x-dialog" id="peer-info"></dialog>
     <dialog is="x-dialog" id="edit-message"></dialog>
     <dialog is="x-dialog" id="confirm"></dialog>
+
+    <script src="index.js" type="module"></script>
   </body>
 </html>

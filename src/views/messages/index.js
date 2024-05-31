@@ -2,6 +2,7 @@ import { components } from '../../lib/components.js'
 import process from 'socket:process'
 
 let isPanning = false
+const isDesktop = !['ios', 'android'].includes(process.platform)
 
 components.messages = function () {
   const elMain = document.querySelector('main')
@@ -36,6 +37,14 @@ components.messages = function () {
   this.during = event => {
     const isLinear = this.angle < 45 || this.angle > 135
     const isSignificant = this.dx > 10 || this.dy > 10
+
+    if (isDesktop) {
+      const el = event.target
+      if (
+        el.closest('.message') ||
+        el.classList.contains('.message')
+      ) return
+    }
 
     if (isLinear && isSignificant) {
       isPanning = true
