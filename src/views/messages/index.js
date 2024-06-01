@@ -2,7 +2,9 @@ import process from 'socket:process'
 
 import { SpringView } from '../../lib/components.js'
 
-export async function viewMessages ({ isMobile }) {
+const view = {}
+
+view.init = async ({ isMobile }) => {
   const elMain = document.getElementById('main')
   const elBuffer = document.getElementById('message-buffer')
   const elSidebar = document.getElementById('sidebar')
@@ -10,7 +12,7 @@ export async function viewMessages ({ isMobile }) {
 
   let isPanning = false
 
-  new SpringView(document.getElementById('messages'), {
+  view.springView = new SpringView(document.getElementById('messages'), {
     axis: 'X',
     absolute: true,
     position: function (pos) {
@@ -79,3 +81,5 @@ export async function viewMessages ({ isMobile }) {
     }
   })
 }
+
+export { view as messages }

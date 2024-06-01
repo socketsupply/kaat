@@ -5,9 +5,9 @@ import { LLM } from 'socket:ai'
 import { network } from './lib/network.js'
 import { database } from './lib/data.js'
 
-import { viewProfile } from './views/profile/index.js'
-import { viewMessages } from './views/messages/index.js'
-import { viewSidebar } from './views/sidebar/index.js'
+import { profile } from './views/profile/index.js'
+import { messages } from './views/messages/index.js'
+import { sidebar } from './views/sidebar/index.js'
 
 const isMobile = ['android', 'ios'].includes(process.platform)
 
@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.body.classList.remove('loading')
 
   //
-  // Initialize the data
+  // Initialize the data layer
   //
   const db = await database()
 
@@ -87,11 +87,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   //
   const net = await network(db)
 
+  const views = { messages, profile, sidebar }
+  const refs = { db, net, isMobile, views }
+
   //
   // Initialize all views and pass them essential references
   //
-  const views = [viewMessages, viewProfile, viewSidebar]
-  Promise.all(views.map(v => v({ db, net, isMobile })))
+  Promise.all(Object.values(views).map(v => v.init(refs)))
 
   //
   // Create an LLM that can partcipate in the chat.

@@ -62,9 +62,6 @@ export class SpringView {
     const during = e => this.onDuring(e, opts.during)
     const end = e => this.onEnd(e, opts.end)
 
-    this.el.start = (...args) => this.start(...args)
-    this.el.updateTransform = () => this.updateTransform()
-
     this.el.addEventListener('mousedown', begin)
     this.el.addEventListener('touchstart', begin)
 

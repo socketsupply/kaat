@@ -2,14 +2,16 @@ import process from 'socket:process'
 
 import { SpringView } from '../../lib/components.js'
 
-export async function viewProfile ({ isMobile }) {
+const view = {}
+
+view.init = async ({ isMobile }) => {
   const vProfilePositionTop = isMobile ? 90 : 48
   const vProfileTransformOrigin = isMobile ? 100 : 80
   const vProfileTransformMag = isMobile ? 0.5 : 0.08
 
   const elMain = document.getElementById('main')
 
-  new SpringView(document.getElementById('profile'), {
+  view.springView = new SpringView(document.getElementById('profile'), {
     axis: 'Y',
     relative: true,
     position: function (pos) {
@@ -52,6 +54,8 @@ export async function viewProfile ({ isMobile }) {
   const buttonOpen = document.getElementById('profile-open')
   const buttonClose = document.getElementById('profile-close')
 
-  buttonOpen.addEventListener('click', () => this.start(vProfilePositionTop))
-  buttonClose.addEventListener('click', () => this.start(window.innerHeight))
+  buttonOpen.addEventListener('click', () => view.springView.start(vProfilePositionTop))
+  buttonClose.addEventListener('click', () => view.springViewstart(window.innerHeight))
 }
+
+export { view as profile }
