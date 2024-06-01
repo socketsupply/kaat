@@ -1,7 +1,6 @@
 body {
   background: transparent;
   color: var(--x-primary);
-
   padding: 0;
   margin: 0;
   font-size: 14px;
@@ -158,6 +157,7 @@ header.draggable {
   }
 
   .message {
+    word-wrap: break-word;
     white-space: break-spaces;
     padding: 8px;
     background-color: #f9f9f9;
@@ -165,17 +165,27 @@ header.draggable {
     border-radius: 6px;
     margin: 8px 0;
     line-height: 22px;
-    max-width: 90%;
-    overflow: auto;
+    overflow: hidden;
+  }
+
+  .message-wrapper {
+    display: grid;
 
     &.mine {
-      place-self: end;
-      background: var(--x-border);
-      border-bottom-right-radius: 0;
+      .message {
+        margin-left: 10%;
+        width: fit-content;
+        place-self: end;
+        background: var(--x-border);
+        border-bottom-right-radius: 0;
+      }
     }
 
     &:not(.mine) {
-      border-bottom-left-radius: 0;
+      .message {
+        margin-right: 10%;
+        border-bottom-left-radius: 0;
+      }
     }
   }
 }

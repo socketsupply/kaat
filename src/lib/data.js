@@ -1,7 +1,7 @@
 import Indexed from '@socketsupply/indexed'
 import application from 'socket:application'
 
-async function reset () {
+const reset = async () => {
   const databases = await window.indexedDB.databases()
   for (const { name } of databases) await Database.drop(name)
   application.exit(0)

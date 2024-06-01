@@ -1,7 +1,6 @@
-import { components } from '../../lib/components.js'
 import process from 'socket:process'
 
-components.sidebar = function () {
+export async function viewSidebar () {
   const coMessages = document.getElementById('messages')
   const elSidebarToggle = document.getElementById('sidebar-toggle')
 

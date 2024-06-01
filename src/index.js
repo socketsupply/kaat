@@ -5,11 +5,11 @@ import { LLM } from 'socket:ai'
 import { network } from './lib/network.js'
 import { database } from './lib/data.js'
 
-import './views/profile/index.js'
-import './views/messages/index.js'
-import './views/sidebar/index.js'
+import { viewProfile } from './views/profile/index.js'
+import { viewMessages } from './views/messages/index.js'
+import { viewSidebar } from './views/sidebar/index.js'
 
-let isMobile = false
+const isMobile = ['android', 'ios'].includes(process.platform)
 
 //
 // We want to know if the keyboard is displayed, the layout should
@@ -28,7 +28,7 @@ window.addEventListener('keyboard', ({ detail }) => {
 //
 // Set up window things, like the menu, etc.
 //
-async function setupWindow () {
+async function initializeWindow () {
   let itemsMac = ''
 
   if (process.platform === 'darwin') {
@@ -69,11 +69,8 @@ async function setupWindow () {
   await application.setSystemMenu({ index: 0, value: menu })
 }
 
-setupWindow()
+initializeWindow()
 
-//
-// Wait for the document to be ready.
-//
 document.addEventListener('DOMContentLoaded', async () => {
   //
   // Reveal the UI in a sexy way
@@ -91,26 +88,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   const net = await network(db)
 
   //
-  // Make these available to any file in the app.
+  // Initialize all views and pass them essential references
   //
-  globalThis.db = db
-  globalThis.net = net
-
-  //
-  // Check if we are on mobile (used to determine some style and behavior)
-  //
-  if (['android', 'ios'].includes(process.platform)) {
-    isMobile = true
-    document.body.setAttribute('hardware', 'mobile')
-  } else {
-    document.body.setAttribute('hardware', 'desktop')
-  }
+  const views = [viewMessages, viewProfile, viewSidebar]
+  Promise.all(views.map(v => v({ db, net, isMobile })))
 
   //
   // Create an LLM that can partcipate in the chat.
   //
   let llm = window.llm = new LLM({
-    path: 'model.gguf',
+    path: `model.gguf`,
     prompt: 'You are a coding assistant.'
   })
 
@@ -137,36 +124,56 @@ document.addEventListener('DOMContentLoaded', async () => {
     //
     // We could speak the generated text using the Speech API.
     //
-    /* const utterance = new SpeechSynthesisUtterance(data)
-    utterance.pitch = 1
-    utterance.rate = 1
-    utterance.volume = 1
-    window.speechSynthesis.speak(utterance) */
+    /*
+      const utterance = new SpeechSynthesisUtterance(data)
+      utterance.pitch = 1
+      utterance.rate = 1
+      utterance.volume = 1
+      window.speechSynthesis.speak(utterance)
+    */
 
     if (!elCurrentMessage) {
+      data = data.trim()
+
       const messagesContainer = document.querySelector('#message-buffer .buffer-content')
+      const elCurrentMessageWrapper = document.createElement('div')
+      elCurrentMessageWrapper.classList.add('message-wrapper')
+ 
       elCurrentMessage = document.createElement('div')
       elCurrentMessage.classList.add('message')
-      messagesContainer.prepend(elCurrentMessage)
+
+      elCurrentMessageWrapper.append(elCurrentMessage)
+      messagesContainer.prepend(elCurrentMessageWrapper)
     }
 
     elCurrentMessage.appendChild(document.createTextNode(data))
   })
 
-  const elSendMessage = document.querySelector('#send-message')
-  const elInputMessage = document.querySelector('#input-message')
+  const elSendMessage = document.getElementById('send-message')
+  const elInputMessage = document.getElementById('input-message')
 
   const send = () => {
     const messagesContainer = document.querySelector('#message-buffer .buffer-content')
+    const elCurrentMessageWrapper = document.createElement('div')
+    elCurrentMessageWrapper.classList.add('message-wrapper')
+    elCurrentMessageWrapper.classList.add('mine')
+
     const elCurrentMessage = document.createElement('div')
     elCurrentMessage.classList.add('message')
-    elCurrentMessage.classList.add('mine')
+
     const text = elInputMessage.innerText.trim()
 
     if (!text.length) return // dont send empty chats
 
     elCurrentMessage.innerText = text
-    messagesContainer.prepend(elCurrentMessage)
+
+    // elCurrentMessageWrapper.append(new XAvatar())
+
+    //
+    // append the message containers to the messages container
+    //
+    elCurrentMessageWrapper.prepend(elCurrentMessage)
+    messagesContainer.prepend(elCurrentMessageWrapper)
 
     //
     // tell the LLM to stfu
@@ -230,4 +237,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   elSendMessage.addEventListener('click', send)
 })
 
+document.body.setAttribute('hardware', isMobile ? 'mobile' : 'desktop')
 document.body.setAttribute('platform', process.platform)

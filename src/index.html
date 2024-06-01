@@ -1,7 +1,6 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
-    <html lang="en">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta
@@ -65,8 +64,8 @@
       </svg>
     </defs>
 
-    <main>
-      <x-view id="messages" class="messages view">
+    <main id="main">
+      <view id="messages" class="messages view">
         <header class="primary draggable">
           <span class="title">#P2P</span>
         </header>
@@ -87,13 +86,13 @@
           </div>
 
         </div>
-      </x-view>
+      </view>
 
       <button id="sidebar-toggle">
         <svg class="app-icon rectangular"><use xlink:href="#sidebar-icon"/></svg>
       </button>
 
-      <x-view id="sidebar" class="view">
+      <view id="sidebar" class="view">
         <header class="primary draggable">
           <div class="content">
             <button id="add-group">
@@ -117,11 +116,11 @@
           <div class="channel">#Frontend</div>
           <div class="channel">#Gaming</div>
         </div>
-      </x-view>
+      </view>
     </main>
 
     <aside>
-      <x-view id="profile" class="view">
+      <view id="profile" class="view">
         <header class="draggable">
           <span>Profile</span>
           <button id="profile-close">
@@ -130,12 +129,8 @@
         </header>
         <div class="content">
         </div>
-      </x-view>
+      </view>
     </aside>
-
-    <dialog is="x-dialog" id="peer-info"></dialog>
-    <dialog is="x-dialog" id="edit-message"></dialog>
-    <dialog is="x-dialog" id="confirm"></dialog>
 
     <script src="index.js" type="module"></script>
   </body>
