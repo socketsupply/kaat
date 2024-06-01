@@ -22,7 +22,7 @@ async function init () {
   //
   // Create an LLM that can partcipate in the chat.
   //
-  llm = window.llm = new LLM({
+  llm = new LLM({
     path: `model.gguf`,
     prompt: 'You are a coding assistant.'
   })
