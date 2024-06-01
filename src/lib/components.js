@@ -281,7 +281,7 @@ export class SpringView {
   }
 }
 
-export class AppAvatar extends Tonic {
+export class Avatar extends HTMLElement {
   MAGIC_NUMBER = 5
   userColors = {}
 
