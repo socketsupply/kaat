@@ -1,10 +1,10 @@
 import process from 'socket:process'
 
-import { SpringView } from '../../lib/components.js'
+import { SpringView, Avatar } from '../../lib/components.js'
 
 const view = {}
 
-view.init = async ({ isMobile }) => {
+view.init = async ({ isMobile, llm }) => {
   const elMain = document.getElementById('main')
   const elBuffer = document.getElementById('message-buffer')
   const elSidebar = document.getElementById('sidebar')
@@ -12,6 +12,9 @@ view.init = async ({ isMobile }) => {
 
   let isPanning = false
 
+  //
+  // Enable some fun interactions on the messages element
+  //
   view.springView = new SpringView(document.getElementById('messages'), {
     axis: 'X',
     absolute: true,
@@ -80,6 +83,144 @@ view.init = async ({ isMobile }) => {
       elBuffer.style.overflow = 'auto'
     }
   })
+
+  //
+  // Handle output from the LLM and input from the user.
+  //
+  let elCurrentMessage = null
+
+  llm.on('end', () => {
+    //
+    // TODO(@heapwolf): broadcast the last message generated to the network as if @ai was a real user on this device.
+    //
+    llm.stop()
+    elCurrentMessage = null
+  })
+
+  llm.on('log', data => {
+    console.log(data)
+  })
+
+  llm.on('data', data => {
+    if (data === '<dummy32000>' || data === '<|user|>') {
+      llm.stop()
+      return
+    }
+
+    //
+    // We could speak the generated text using the Speech API.
+    //
+    /*
+      const utterance = new SpeechSynthesisUtterance(data)
+      utterance.pitch = 1
+      utterance.rate = 1
+      utterance.volume = 1
+      window.speechSynthesis.speak(utterance)
+    */
+
+    if (!elCurrentMessage) {
+      data = data.trim()
+
+      const messagesContainer = document.querySelector('#message-buffer .buffer-content')
+      const elCurrentMessageWrapper = document.createElement('div')
+      elCurrentMessageWrapper.classList.add('message-wrapper')
+ 
+      elCurrentMessage = document.createElement('div')
+      elCurrentMessage.classList.add('message')
+
+      elCurrentMessageWrapper.append(elCurrentMessage)
+      messagesContainer.prepend(elCurrentMessageWrapper)
+    }
+
+    elCurrentMessage.appendChild(document.createTextNode(data))
+  })
+
+  const elSendMessage = document.getElementById('send-message')
+  const elInputMessage = document.getElementById('input-message')
+
+  const send = () => {
+    const messagesContainer = document.querySelector('#message-buffer .buffer-content')
+    const elCurrentMessageWrapper = document.createElement('div')
+    elCurrentMessageWrapper.classList.add('message-wrapper')
+    elCurrentMessageWrapper.classList.add('mine')
+
+    const elCurrentMessage = document.createElement('div')
+    elCurrentMessage.classList.add('message')
+
+    const text = elInputMessage.innerText.trim()
+
+    if (!text.length) return // dont send empty chats
+
+    elCurrentMessage.innerText = text
+
+    // elCurrentMessageWrapper.append(new XAvatar())
+
+    //
+    // append the message containers to the messages container
+    //
+    elCurrentMessageWrapper.prepend(elCurrentMessage)
+    messagesContainer.prepend(elCurrentMessageWrapper)
+
+    //
+    // tell the LLM to stfu
+    //
+    if (/^stop$/.test(text.trim())) {
+      llm.stop()
+      elInputMessage.textContent = ''
+      return
+    }
+
+    // only chat to @ai when it's mentioned.
+    if (/^@ai /.test(text.trim())) {
+      llm.chat(text)
+    }
+
+    //
+    // TODO(@heapwolf): broadcast the message to the network
+    //
+    elInputMessage.textContent = ''
+  }
+
+  //
+  // Handle paste elegantly (stripping formatting, but preserving whitespace)
+  //
+  elInputMessage.addEventListener('paste', e => {
+    e.preventDefault()
+
+    const clipboardData = e.clipboardData || window.clipboardData
+    let text = clipboardData.getData('Text')
+
+    const sanitizedHTML = text
+      .replace(/ /g, '&nbsp;') // Preserve spaces
+      .replace(/\n/g, '<br>'); // Preserve newlines
+
+    const selection = window.getSelection()
+    if (!selection.rangeCount) return false
+    
+    const range = selection.getRangeAt(0)
+    range.deleteContents()
+
+    const fragment = document.createDocumentFragment()
+    const div = document.createElement('div')
+    div.innerHTML = sanitizedHTML
+
+    while (div.firstChild) {
+      fragment.appendChild(div.firstChild)
+    }
+
+    range.insertNode(fragment)
+    range.collapse(false)
+  })
+
+  //
+  // On desktop, enter should send, but shift-enter should create a new line.
+  //
+  elInputMessage.addEventListener('keydown', e => {
+    if (isMobile) return // only the button should send on mobile
+    if (e.key === 'Enter' && !e.shiftKey) send()
+  })
+
+  elSendMessage.addEventListener('click', send)
 }
 
 export { view as messages }
