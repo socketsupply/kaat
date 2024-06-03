@@ -1,13 +1,11 @@
-import { createComponent } from '../lib/component.js'
+import { Register } from '../lib/component.js'
 
-function Avatar (root, props) {
+function Avatar (props) {
   const MAGIC_NUMBER = 5
   const userColors = {}
   const bg = userColors[props.nick] ??= Math.floor(Math.random() * 20)
 
   function createIcon(id = 'anonymous') {
-    const element = document.createElement('div')
-
     const hash = id.split('').reduce((hash, char) => 
       (hash ^ char.charCodeAt(0)) * -MAGIC_NUMBER, MAGIC_NUMBER) >>> 2
 
@@ -28,18 +26,16 @@ function Avatar (root, props) {
       }
     }
 
-    element.appendChild(svg)
-    return element
+    return svg
   }
 
   return (
-    div({ class: 'icon' },
-      div({ class: 'icon', style: { backgroundColor: `var(--relay-avatar-bg-${bg})` } },
-        createIcon(props.nick)
-      )
+    div({ class: 'icon', style: { backgroundColor: `var(--relay-avatar-bg-${bg})` } },
+      createIcon(props.nick)
     )
   )
 }
 
-const avatar = createComponent(Avatar)
-export { avatar as Avatar }
+Avatar = Register(Avatar)
+
+export { Avatar }

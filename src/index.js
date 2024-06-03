@@ -4,7 +4,7 @@ import { LLM } from 'socket:ai'
 
 import { network } from './lib/network.js'
 import { database } from './lib/data.js'
-import { createComponents, createRoot } from './lib/component.js'
+import { createRoot } from './lib/component.js'
 
 import { Profile } from './views/profile/index.js'
 import { Messages } from './views/messages/index.js'
@@ -108,10 +108,10 @@ async function App () {
 
       if (el.getAttribute('open') === 'true') {
         messages.updateTransform()
-        messages.start(0)
+        messages.moveTo(0)
         el.setAttribute('open', 'false')
       } else {
-        messages.start(280)
+        messages.moveTo(280)
         el.setAttribute('open', 'true')
       }
     }
@@ -126,6 +126,9 @@ async function App () {
   // Render the main screen.
   //
   return [
+    aside({ id: 'secondary', click },
+      await Profile({ id: 'profile', class: 'view', ...context })
+    ),
     main({ id: 'main', click },
       button({ id: 'sidebar-toggle' },
         svg({ class: 'app-icon rectangular' },
@@ -134,9 +137,6 @@ async function App () {
       ),
       await Messages({ id: 'messages', class: 'view', ...context }),
       await Sidebar({ id: 'sidebar', class: 'view', ...context })
-    ),
-    aside({ id: 'secondary', click },
-      await Profile({ id: 'profile', class: 'view', ...context })
     )
   ]
 }

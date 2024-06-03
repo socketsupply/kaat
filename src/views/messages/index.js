@@ -1,8 +1,24 @@
 import process from 'socket:process'
 
-import { createComponent } from '../../lib/component.js'
+import { Register } from '../../lib/component.js'
 import { Spring } from '../../lib/spring.js'
 import { Avatar } from '../../components/avatar.js'
+
+async function Message (props) {
+  const messageClass = props.mine === true
+    ? 'message-wrapper mine'
+    : 'message-wrapper'
+
+  return div({ class: messageClass },
+    div({ class: 'author' },
+      await Avatar(props),
+      div({ class: 'nick' }, '@', props.nick)
+    ),
+    div({ class: 'message' }, props.body)
+  )
+}
+
+Message = Register(Message)
 
 async function Messages (props) {
   const { net, llm, isMobile } = props
@@ -27,16 +43,14 @@ async function Messages (props) {
       const progress = pos / 280
       const scale = 0.95 + 0.05 * progress
       const opacity = 0.0 + 1 * progress
+
+      if (!elSidebar) elSidebar = document.getElementById('sidebar')
       elSidebar.style.transform = `scale(${Math.min(scale, 1)})`
       elSidebar.style.opacity = opacity
       elSidebar.style.transformOrigin = '20% 70%'
     },
     begin: function (event) {
-      if (!elBuffer) {
-        elBuffer = document.getElementById('message-buffer')
-        elSidebar = document.getElementById('sidebar')
-        elSidebarToggle = document.getElementById('sidebar-toggle')
-      }
+      if (!elBuffer) elBuffer = document.getElementById('message-buffer')
 
       elBuffer.style.overflow = 'auto'
 
@@ -79,12 +93,16 @@ async function Messages (props) {
       }
 
       if (isPanning) {
+        if (!elSidebarToggle) {
+          elSidebarToggle = document.getElementById('sidebar-toggle')
+        }
+
         if (this.currentX < (280 / 2)) {
           elSidebarToggle.setAttribute('open', 'false')
-          this.start(0)
+          this.moveTo(0)
         } else {
           elSidebarToggle.setAttribute('open', 'true')
-          this.start(280)
+          this.moveTo(280)
         }
       }
 
@@ -95,26 +113,8 @@ async function Messages (props) {
     }
   })
 
-  this.start = spring.start.bind(spring)
+  this.moveTo = spring.moveTo.bind(spring)
   this.updateTransform = spring.updateTransform.bind(spring)
-
-  /* function createMessage (opts) {
-    const elWrapper = document.createElement('div')
-    elWrapper.classList.add('message-wrapper')
-    if (opts.mine) elWrapper.classList.add('mine')
-
-    elWrapper.append(new Avatar({
-      nick: 'ai'
-    }))
-
-    const elMessage = document.createElement('div')
-    elMessage.classList.add('message')
-
-    elWrapper.append(elMessage)
-    elMessages.prepend(elWrapper)
-
-    return elMessage
-  } */
 
   //
   // Handle output from the LLM and input from the user.
@@ -133,7 +133,7 @@ async function Messages (props) {
     console.log(data)
   })
 
-  llm.on('data', data => {
+  llm.on('data', async data => {
     if (data === '<dummy32000>' || data === '<|user|>') {
       llm.stop()
       return
@@ -152,22 +152,30 @@ async function Messages (props) {
 
     if (!elCurrentMessage) {
       data = data.trim() // first token should not be empty
-      if (data) elCurrentMessage = createMessage()
+
+      if (data) {
+        elCurrentMessage = await Message({ body: data, nick: 'ai', mine: false })
+        const messagesBuffer = this.querySelector('.buffer-content')
+        if (elCurrentMessage) messagesBuffer.prepend(elCurrentMessage)
+      }
     }
 
-    if (elCurrentMessaeg) { // just update the last message
-      elCurrentMessage.appendChild(document.createTextNode(data))
+    if (elCurrentMessage) { // just update the last message
+      elCurrentMessage
+        .querySelector('.message')
+        .appendChild(document.createTextNode(data))
     }
   })
 
-  const onSendPress = () => {
+  const onSendPress = async () => {
     const elInputMessage = document.getElementById('input-message')
     const data = elInputMessage.innerText.trim()
 
-    elCurrentMessage = createMessage({ data, mine: true })
-    if (!elCurrentMessage) return
+    if (!data.length) return
+    elCurrentMessage = await Message({ body: data, mine: true, nick: 'me' })
 
-    elCurrentMessage.innerText = data
+    const messagesBuffer = this.querySelector('.buffer-content')
+    if (elCurrentMessage) messagesBuffer.prepend(elCurrentMessage)
 
     //
     // tell the LLM to stfu
@@ -180,6 +188,7 @@ async function Messages (props) {
 
     // only chat to @ai when it's mentioned.
     if (/^@ai /.test(data.trim())) {
+      elCurrentMessage = null // invalidate the current message
       llm.chat(data)
     }
 
@@ -269,5 +278,5 @@ async function Messages (props) {
   ]
 }
 
-const messages = createComponent(Messages)
-export { messages as Messages }
+Messages = Register(Messages)
+export { Messages }

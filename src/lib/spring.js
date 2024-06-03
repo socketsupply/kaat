@@ -235,7 +235,7 @@ export class Spring {
    * @param {number} destination - The destination position.
    * @param {Object} [config={}] - Configuration for the animation.
    */
-  start (destination, config = {}) {
+  moveTo (destination, config = {}) {
     this.updateTransform()
     const currentPosition = this.axis === 'X' ? this.currentX : this.currentY
     const initialVelocity = this.axis === 'X' ? this.lastVelocityX * 1000 : this.lastVelocityY * 1000

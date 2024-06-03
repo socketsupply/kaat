@@ -35,6 +35,14 @@ main {
   box-shadow: 0 50vh 0 0 var(--x-background);
 }
 
+aside {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+}
+
 defs {
   display: none;
 }
@@ -82,112 +90,6 @@ header.draggable {
   --app-region: drag;
   user-select: none;
   -webkit-user-select: non1;
-}
-
-#messages {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  width: 100vw;
-  height: 100vh;
-  background-color: var(--x-window);
-  position: fixed;
-  top: 0;
-  left: 0;
-  user-select: none;
-  will-change: transform, width;
-  overflow: hidden;
-  box-shadow: 0px 0px 24px -10px rgba(0, 0, 0, 1);
-  z-index: 2;
-
-  #input {
-    position: relative;
-    padding: 12px;
-    background: var(--x-input-background);
-    border-radius: 6px;
-    height: auto;
-    margin: 20px;
-  }
-
-  #input #input-message {
-    color: var(--x-primary);
-    background: transparent;
-    border: none;
-    padding: 0;
-    width: 100%;
-    font-size: 16px;
-    outline: none;
-    padding-right: 32px;
-  }
-
-  #input #send-message {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-  }
-
-  .content {
-    display: grid;
-    grid-template-rows: 1fr auto;
-    margin: 0;
-  }
-
-  .buffer-wrapper {
-    position: relative;
-  }
-
-  #message-buffer {
-    overflow-y: auto;
-    position: absolute;
-    top: 0; 
-    left: 0; 
-    right: 0; 
-    bottom: 0;
-    display: flex;
-    flex-direction: column-reverse;
-    transition: bottom 0.35s ease-out; 
-    will-change: bottom, height;
-    padding: 0 20px;
-  }
-
-  .buffer-content {
-    display: flex;
-    flex-direction: column-reverse;
-    width: 100%;
-    padding: 8px 0;
-  }
-
-  .message {
-    word-wrap: break-word;
-    white-space: break-spaces;
-    padding: 8px;
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    margin: 8px 0;
-    line-height: 22px;
-    overflow: hidden;
-  }
-
-  .message-wrapper {
-    display: grid;
-
-    &.mine {
-      .message {
-        margin-left: 10%;
-        width: fit-content;
-        place-self: end;
-        background: var(--x-border);
-        border-bottom-right-radius: 0;
-      }
-    }
-
-    &:not(.mine) {
-      .message {
-        margin-right: 10%;
-        border-bottom-left-radius: 0;
-      }
-    }
-  }
 }
 
 .view {

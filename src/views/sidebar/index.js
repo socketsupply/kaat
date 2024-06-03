@@ -1,15 +1,25 @@
 import process from 'socket:process'
 
-import { createComponent } from '../../lib/component.js'
+import { Register } from '../../lib/component.js'
 
 async function Sidebar (props) {
- 
+  const vProfilePositionTop = props.isMobile ? 90 : 48
+  const vProfileTransformOrigin = props.isMobile ? 100 : 80
+  const vProfileTransformMag = props.isMobile ? 0.5 : 0.08
+
   this.addEventListener('ready', e => {
     // ...this component is ready
   })
 
+  function click (event, match) {
+    if (match('#profile-open')) {
+      const elProfile = document.getElementById('profile')
+      elProfile.moveTo(vProfilePositionTop)
+    }
+  }
+
   return [
-    header({ class: 'primary draggable' },
+    header({ class: 'primary draggable', click },
       div({ class: 'content' },
         button({ id: 'add-group' },
           svg({ class: 'app-icon' },
@@ -40,5 +50,5 @@ async function Sidebar (props) {
   ]
 }
 
-const sidebar = createComponent(Sidebar)
-export { sidebar as Sidebar }
+Sidebar = Register(Sidebar)
+export { Sidebar }

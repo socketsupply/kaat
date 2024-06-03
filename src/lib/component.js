@@ -7,6 +7,7 @@
  *   - async/await "just works", no weird use functions.
  *   - Empty root is weird, allow components to return arrays.
  *   - Anything returned is appended to the root.
+ *   - No esscape opportunities from big template literals.
  *   - Insde the component, 'this' is the dom element.
  *
  * Usage:
@@ -26,7 +27,7 @@
  *   )
  * }
  *
- * createComponent(Counter) // The catch is, you need to register your components.
+ * Counter = Register(Counter) // The catch is, you need to register your components.
  *
  * async function App () {
  *   let count = 0
@@ -131,47 +132,43 @@ for (const tag of tags) {
  * @param {Function} Fn - The component function to register.
  * @returns {Function} - The registered component function wrapped in a Proxy.
  */
-export function createComponent(Fn) {
-  /* eslint-disable no-new-func */
-  globalThis[Fn.name] = new Proxy(Fn, {
-    /**
-     * Handles the application of the component function.
-     * @param {Function} target - The original component function.
-     * @param {Object} self - The value of `this` provided for the call to `target`.
-     * @param {Array} argumentsList - The list of arguments for the call to `target`.
-     * @returns {Promise<HTMLElement>} - The created HTML element.
-     */
-    apply: async (target, self, argumentsList) => {
-      const el = createElement(Fn.name, ...argumentsList)
+export function Register (...args) {
+  const register = Fn => {
+    /* eslint-disable no-new-func */
+    globalThis[Fn.name] = new Proxy(Fn, {
       /**
-       * Renders the component with updated properties.
-       * @param {...*} args - The updated properties.
+       * Handles the application of the component function.
+       * @param {Function} target - The original component function.
+       * @param {Object} self - The value of `this` provided for the call to `target`.
+       * @param {Array} argumentsList - The list of arguments for the call to `target`.
+       * @returns {Promise<HTMLElement>} - The created HTML element.
        */
-      el.render = async (...args) => {
-        el.innerHTML = ''
-        const props = { ...argumentsList[0], ...args[0] }
-        const children = args.flat().filter(a => a instanceof globalThis.Node)
-        const tree = await Reflect.apply(target, el, [props, ...children])
-        if (tree) [tree].flat().forEach(node => el.appendChild(node))
+      apply: async (target, self, argumentsList) => {
+        const el = createElement(Fn.name, ...argumentsList)
+        /**
+         * Renders the component with updated properties.
+         * @param {...*} args - The updated properties.
+         */
+        el.render = async (...args) => {
+          el.innerHTML = ''
+          const props = { ...argumentsList[0], ...args[0] }
+          const children = args.flat().filter(a => a instanceof globalThis.Node)
+          const tree = await Reflect.apply(target, el, [props, ...children])
+          if (tree) [tree].flat().forEach(node => el.appendChild(node))
+        }
+
+        const tree = await Reflect.apply(target, el, argumentsList)
+        if (tree) [tree].flat().forEach(node => el.appendChild(node)) // allow arrays
+
+        return el
       }
+    })
 
-      const tree = await Reflect.apply(target, el, argumentsList)
-      if (tree) [tree].flat().forEach(node => el.appendChild(node)) // allow arrays
+    return globalThis[Fn.name]
+  }
 
-      return el
-    }
-  })
-
-  return globalThis[Fn.name]
-}
-
-/**
- * Registers multiple component functions.
- * @param {...Function} args - The component functions to register.
- * @returns {Array<Function>} - The array of registered component functions.
- */
-export function createComponents (...args) {
-  return args.map(createComponent)
+  if (args.length > 1) return args.map(register)
+  return register(args[0])
 }
 
 /**
@@ -181,7 +178,7 @@ export function createComponents (...args) {
  * @returns {Promise<void>}
  */
 export async function createRoot (fn, el) {
-  const c = createComponent(fn)
+  const c = Register(fn)
   let root
 
   try {
