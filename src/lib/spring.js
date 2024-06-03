@@ -1,4 +1,4 @@
-export class SpringView {
+export class Spring {
   /**
    * Current X position.
    * @type {number}
@@ -278,35 +278,5 @@ export class SpringView {
       window.cancelAnimationFrame(this.animationFrameId)
       this.animationFrameId = null
     }
-  }
-}
-
-export class Avatar extends HTMLElement {
-  MAGIC_NUMBER = 5
-  userColors = {}
-
-  constructor (props) {
-    const bg = this.userColors[this.props.nick] ??= Math.floor(Math.random() * 20)
-    this.style.background = `var(--relay-avatar-bg-${bg})`
-    this.render(props)
-  }
-
-  async createIcon (id = 'anonymous') {
-    const hash = id.split('')
-      .reduce((hash, char) => (hash ^ char.charCodeAt(0)) * -this.MAGIC_NUMBER, this.MAGIC_NUMBER) >>> 2
-
-    return [...Array(id ? 25 : 0)].reduce((acc, e, i) => hash & (1 << (i % 15))
-      ? acc + `<rect x="${i > 14 ? 7 - ~~(i / 5) : ~~(i / 5)}" y="${i % 5}" width="1" height="1"/>`
-      : acc,
-    `<svg viewBox="-1.5 -1.5 8 8" xmlns="http://www.w3.org/2000/svg" fill="#fff" title="${id}">`
-    ) + '</svg>'
-  }
-
-  async render (props) {
-    this.insertAdjacentHTML('afterbegin', `
-      <div class="icon" styles="avatarbg">
-        ${Tonic.unsafeRawString(await this.createIcon(this.props.nick))}
-      </div>
-    `)
   }
 }

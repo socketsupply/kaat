@@ -1,6 +1,10 @@
 import Indexed from '@socketsupply/indexed'
 import application from 'socket:application'
 
+//
+// Don't do top level awaits unless your absolutely need to. It can be a
+// foot-gun since it will convert all your imports from static to dynamic.
+//
 const reset = async () => {
   const databases = await window.indexedDB.databases()
   for (const { name } of databases) await Database.drop(name)

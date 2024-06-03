@@ -12,10 +12,7 @@
     "test:integration": "ssc build -r -o --test=./test/index.js"
   },
   "dependencies": {
-    "@socketsupply/components": "^14.1.0",
-    "@socketsupply/indexed": "^1.0.3",
-    "@socketsupply/tonic": "^15.1.2",
-    "nice-bytes": "^1.1.0"
+    "@socketsupply/indexed": "^1.0.3"
   },
   "devDependencies": {
     "@socketsupply/socket": "^0.5.0"

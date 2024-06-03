@@ -1,21 +1,26 @@
 import process from 'socket:process'
 
-import { SpringView, Avatar } from '../../lib/components.js'
+import { createComponent } from '../../lib/component.js'
+import { Spring } from '../../lib/spring.js'
+import { Avatar } from '../../components/avatar.js'
 
-const view = {}
+async function Messages (props) {
+  const { net, llm, isMobile } = props
 
-view.init = async ({ isMobile, llm }) => {
-  const elMain = document.getElementById('main')
-  const elBuffer = document.getElementById('message-buffer')
-  const elSidebar = document.getElementById('sidebar')
-  const elSidebarToggle = document.getElementById('sidebar-toggle')
+  //
+  // Cache elements that we will touch frequently with the interaction/animation.
+  //
+  let elBuffer
+  let elSidebar
+  let elSidebarToggle
 
   let isPanning = false
 
   //
   // Enable some fun interactions on the messages element
   //
-  view.springView = new SpringView(document.getElementById('messages'), {
+
+  const spring = new Spring(this, {
     axis: 'X',
     absolute: true,
     position: function (pos) {
@@ -27,6 +32,12 @@ view.init = async ({ isMobile, llm }) => {
       elSidebar.style.transformOrigin = '20% 70%'
     },
     begin: function (event) {
+      if (!elBuffer) {
+        elBuffer = document.getElementById('message-buffer')
+        elSidebar = document.getElementById('sidebar')
+        elSidebarToggle = document.getElementById('sidebar-toggle')
+      }
+
       elBuffer.style.overflow = 'auto'
 
       if (document.body.getAttribute('keyboard') === 'true') {
@@ -84,6 +95,27 @@ view.init = async ({ isMobile, llm }) => {
     }
   })
 
+  this.start = spring.start.bind(spring)
+  this.updateTransform = spring.updateTransform.bind(spring)
+
+  /* function createMessage (opts) {
+    const elWrapper = document.createElement('div')
+    elWrapper.classList.add('message-wrapper')
+    if (opts.mine) elWrapper.classList.add('mine')
+
+    elWrapper.append(new Avatar({
+      nick: 'ai'
+    }))
+
+    const elMessage = document.createElement('div')
+    elMessage.classList.add('message')
+
+    elWrapper.append(elMessage)
+    elMessages.prepend(elWrapper)
+
+    return elMessage
+  } */
+
   //
   // Handle output from the LLM and input from the user.
   //
@@ -119,64 +151,40 @@ view.init = async ({ isMobile, llm }) => {
     */
 
     if (!elCurrentMessage) {
-      data = data.trim()
-
-      const messagesContainer = document.querySelector('#message-buffer .buffer-content')
-      const elCurrentMessageWrapper = document.createElement('div')
-      elCurrentMessageWrapper.classList.add('message-wrapper')
- 
-      elCurrentMessage = document.createElement('div')
-      elCurrentMessage.classList.add('message')
-
-      elCurrentMessageWrapper.append(elCurrentMessage)
-      messagesContainer.prepend(elCurrentMessageWrapper)
+      data = data.trim() // first token should not be empty
+      if (data) elCurrentMessage = createMessage()
     }
 
-    elCurrentMessage.appendChild(document.createTextNode(data))
+    if (elCurrentMessaeg) { // just update the last message
+      elCurrentMessage.appendChild(document.createTextNode(data))
+    }
   })
 
-  const elSendMessage = document.getElementById('send-message')
-  const elInputMessage = document.getElementById('input-message')
+  const onSendPress = () => {
+    const elInputMessage = document.getElementById('input-message')
+    const data = elInputMessage.innerText.trim()
 
-  const send = () => {
-    const messagesContainer = document.querySelector('#message-buffer .buffer-content')
-    const elCurrentMessageWrapper = document.createElement('div')
-    elCurrentMessageWrapper.classList.add('message-wrapper')
-    elCurrentMessageWrapper.classList.add('mine')
+    elCurrentMessage = createMessage({ data, mine: true })
+    if (!elCurrentMessage) return
 
-    const elCurrentMessage = document.createElement('div')
-    elCurrentMessage.classList.add('message')
-
-    const text = elInputMessage.innerText.trim()
-
-    if (!text.length) return // dont send empty chats
-
-    elCurrentMessage.innerText = text
-
-    // elCurrentMessageWrapper.append(new XAvatar())
-
-    //
-    // append the message containers to the messages container
-    //
-    elCurrentMessageWrapper.prepend(elCurrentMessage)
-    messagesContainer.prepend(elCurrentMessageWrapper)
+    elCurrentMessage.innerText = data
 
     //
     // tell the LLM to stfu
     //
-    if (/^stop$/.test(text.trim())) {
+    if (/^stop$/.test(data.trim())) {
       llm.stop()
       elInputMessage.textContent = ''
       return
     }
 
     // only chat to @ai when it's mentioned.
-    if (/^@ai /.test(text.trim())) {
-      llm.chat(text)
+    if (/^@ai /.test(data.trim())) {
+      llm.chat(data)
     }
 
     //
-    // TODO(@heapwolf): broadcast the message to the network
+    // TODO(@heapwolf): broadcast the message to the subcluster
     //
     elInputMessage.textContent = ''
   }
@@ -184,7 +192,7 @@ view.init = async ({ isMobile, llm }) => {
   //
   // Handle paste elegantly (stripping formatting, but preserving whitespace)
   //
-  elInputMessage.addEventListener('paste', e => {
+  function paste (e) {
     e.preventDefault()
 
     const clipboardData = e.clipboardData || window.clipboardData
@@ -210,17 +218,56 @@ view.init = async ({ isMobile, llm }) => {
 
     range.insertNode(fragment)
     range.collapse(false)
-  })
+  }
 
   //
   // On desktop, enter should send, but shift-enter should create a new line.
   //
-  elInputMessage.addEventListener('keydown', e => {
+  function keydown (e) {
     if (isMobile) return // only the button should send on mobile
-    if (e.key === 'Enter' && !e.shiftKey) send()
-  })
+    if (e.key === 'Enter' && !e.shiftKey) onSendPress()
+  }
 
-  elSendMessage.addEventListener('click', send)
+  function click (e) {
+    onSendPress()
+  }
+
+  //
+  // Passing a function to the render tree will be observed for that element.
+  // The deeper the event is placed in the tree, the more specific it will be
+  // and the sooner it will fire.
+  //
+  return [
+    header({ class: 'primary draggable' },
+      span({ class: 'title' }, '#P2P')
+    ),
+    div({ class: 'content' },
+
+      //
+      // The messages area
+      //
+      div({ class: 'buffer-wrapper' },
+        div({ id: 'message-buffer' },
+          div({ class: 'buffer-content' })
+        )
+      ),
+
+      //
+      // The input area
+      //
+      div({ id: 'input' },
+
+        div({ id: 'input-message', contenteditable: 'true', keydown, paste }),
+
+        button({ id: 'send-message', click },
+          svg({ class: 'app-icon' },
+            use({ 'xlink:href': '#send-icon' })
+          )
+        )
+      )
+    )
+  ]
 }
 
-export { view as messages }
+const messages = createComponent(Messages)
+export { messages as Messages }

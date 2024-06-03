@@ -4,25 +4,25 @@ import { LLM } from 'socket:ai'
 
 import { network } from './lib/network.js'
 import { database } from './lib/data.js'
+import { createComponents, createRoot } from './lib/component.js'
 
-import { profile } from './views/profile/index.js'
-import { messages } from './views/messages/index.js'
-import { sidebar } from './views/sidebar/index.js'
-
-const isMobile = ['android', 'ios'].includes(process.platform)
-let llm
+import { Profile } from './views/profile/index.js'
+import { Messages } from './views/messages/index.js'
+import { Sidebar } from './views/sidebar/index.js'
 
 //
-// Any and all initializations that can happen before DOMContentLoaded.
+// The main component, this is the program entry point.
 //
-async function init () {
+async function App () {
+  const isMobile = ['android', 'ios'].includes(process.platform)
+
   document.body.setAttribute('hardware', isMobile ? 'mobile' : 'desktop')
   document.body.setAttribute('platform', process.platform)
 
   //
   // Create an LLM that can partcipate in the chat.
   //
-  llm = new LLM({
+  const llm = new LLM({
     path: `model.gguf`,
     prompt: 'You are a coding assistant.'
   })
@@ -86,18 +86,6 @@ async function init () {
 
     await application.setSystemMenu({ index: 0, value: menu })
   }
-}
-
-init()
-
-//
-// Everything that can only happen after the document is loaded.
-//
-document.addEventListener('DOMContentLoaded', async () => {
-  //
-  // Reveal the UI in a sexy way.
-  //
-  document.body.classList.remove('loading')
 
   //
   // Initialize the data layer.
@@ -110,13 +98,50 @@ document.addEventListener('DOMContentLoaded', async () => {
   const net = await network(db)
 
   //
-  // Shared referneces between all the application's views.
+  // Pretty much a global click handler for anything in the app.
   //
-  const views = { messages, profile, sidebar }
-  const refs = { db, net, llm, isMobile, views }
+  function click (event, match) {
+    const el = match('#sidebar-toggle')
+
+    if (el) {
+      const messages = document.getElementById('messages')
+
+      if (el.getAttribute('open') === 'true') {
+        messages.updateTransform()
+        messages.start(0)
+        el.setAttribute('open', 'false')
+      } else {
+        messages.start(280)
+        el.setAttribute('open', 'true')
+      }
+    }
+  }
 
   //
-  // Initialize all views and pass them essential references
+  // Things we want to share with other components.
   //
-  Promise.all(Object.values(views).map(v => v.init(refs)))
+  const context = { db, net, llm, isMobile }
+
+  //
+  // Render the main screen.
+  //
+  return [
+    main({ id: 'main', click },
+      button({ id: 'sidebar-toggle' },
+        svg({ class: 'app-icon rectangular' },
+          use({ 'xlink:href': '#sidebar-icon' })
+        )
+      ),
+      await Messages({ id: 'messages', class: 'view', ...context }),
+      await Sidebar({ id: 'sidebar', class: 'view', ...context })
+    ),
+    aside({ id: 'secondary', click },
+      await Profile({ id: 'profile', class: 'view', ...context })
+    )
+  ]
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  createRoot(App, document.body)
+  document.body.classList.remove('loading')
 })

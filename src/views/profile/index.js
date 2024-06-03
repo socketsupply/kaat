@@ -1,17 +1,16 @@
 import process from 'socket:process'
 
-import { SpringView } from '../../lib/components.js'
+import { createComponent } from '../../lib/component.js'
+import { Spring } from '../../lib/spring.js'
 
-const view = {}
-
-view.init = async ({ isMobile }) => {
-  const vProfilePositionTop = isMobile ? 90 : 48
-  const vProfileTransformOrigin = isMobile ? 100 : 80
-  const vProfileTransformMag = isMobile ? 0.5 : 0.08
+async function Profile (props) {
+  const vProfilePositionTop = props.isMobile ? 90 : 48
+  const vProfileTransformOrigin = props.isMobile ? 100 : 80
+  const vProfileTransformMag = props.isMobile ? 0.5 : 0.08
 
   const elMain = document.getElementById('main')
 
-  view.springView = new SpringView(document.getElementById('profile'), {
+  const spring = new Spring(this, {
     axis: 'Y',
     relative: true,
     position: function (pos) {
@@ -48,14 +47,32 @@ view.init = async ({ isMobile }) => {
     }
   })
 
+  this.start = spring.start
+
   //
   // Buttons to open and close the profile view
   //
-  const buttonOpen = document.getElementById('profile-open')
-  const buttonClose = document.getElementById('profile-close')
+  // const buttonOpen = document.getElementById('profile-open')
+  // const buttonClose = document.getElementById('profile-close')
 
-  buttonOpen.addEventListener('click', () => view.springView.start(vProfilePositionTop))
-  buttonClose.addEventListener('click', () => view.springViewstart(window.innerHeight))
+  // buttonOpen.addEventListener('click', () => view.springView.start(vProfilePositionTop))
+
+  function click (event) {
+    view.springViewstart(window.innerHeight)
+  }
+
+  return [
+    header({ class: 'draggable' },
+      span('Profile'),
+      button({ id: 'profile-close', click },
+        svg({ class: 'app-icon' },
+          use({ 'xlink:href': '#close-icon' })
+        )
+      )
+    ),
+    div({ class: 'content' })
+  ]
 }
 
-export { view as profile }
+const profile = createComponent(Profile)
+export { profile as Profile }
