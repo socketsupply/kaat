@@ -26,16 +26,16 @@ th {
   padding: 12px 10px;
   background-color: var(--x-background);
   border-bottom: 1px solid var(--x-border);
-  border-right: 1px solid var(--x-border);
   color: var(--x-info);
 }
 
 td {
   line-height: 22px;
-  padding: 10px;
+  padding: 8px;
   border-bottom: 1px solid var(--x-border);
 }
 
+th:not(:first-of-type),
 td:not(:first-of-type) {
   border-left: 1px solid var(--x-border);
 }

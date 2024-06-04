@@ -29,6 +29,7 @@
     --x-input-border: rgba(201, 201, 201, 1);
     --x-input-border-hover: rgba(54, 57, 61, 1);
     --x-input-background: rgba(250, 250, 250, 1);
+    --x-input-background-hover: rgba(245, 245, 245, 1);
     --x-input-background-focus: rgba(235, 235, 235, 1);
     --x-border: rgba(224, 224, 224, 1);
     --x-border-accent: rgba(206, 206, 206, 1);
@@ -81,13 +82,14 @@
     --x-disabled: rgba(170, 170, 170, 1);
     --x-button-text: rgba(255, 255, 255, 1);
     --x-button-shadow: rgba(0, 0, 0, 1);
-    --x-button-background: rgba(56, 56, 56, 1);
-    --x-button-background-hover: rgba(94, 94, 94, 1);
-    --x-button-background-focus: rgba(84, 84, 84, 1);
+    --x-button-background: rgba(50, 50, 50, 1);
+    --x-button-background-hover: rgba(60, 60, 60, 1);
+    --x-button-background-focus: rgba(60, 60, 60, 1);
     --x-input-text: rgba(255, 255, 255, 1);
     --x-input-text-hover: rgba(255, 255, 255, 1);
-    --x-input-background: rgba(33, 33, 33, 1);
-    --x-input-background-focus: rgba(20, 20, 20, 1);
+    --x-input-background: rgba(50, 50, 50, 1);
+    --x-input-background-hover: rgba(45, 45, 45, 1);
+    --x-input-background-focus: rgba(40, 40, 40, 1);
     --x-input-border: rgba(80, 80, 80, 1);
     --x-input-border-hover: rgba(105, 105, 105, 1);
     --x-border: rgba(72, 72, 72, 1);

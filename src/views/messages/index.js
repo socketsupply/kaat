@@ -3,6 +3,7 @@ import process from 'socket:process'
 import { Register } from '../../lib/component.js'
 import { Spring } from '../../lib/spring.js'
 import { Avatar } from '../../components/avatar.js'
+// import { Virtual } from '../../components/virtual.js'
 import { RelativeTime } from '../../components/relative-time.js'
 
 async function Message (props) {
@@ -129,6 +130,31 @@ async function Messages (props) {
   }
 
   //
+  // Handle messages from each network subcluster that was initialized from the database
+  //
+  for (const [channelId, subcluster] of Object.entries(net.subclusters)) {
+    subcluster.on('message', (value, packet) => {
+      //
+      // There are a few high-level conditions that we should check before accepting data
+      //
+      if (!packet.verified) return // nope. just gtfo
+      if (packet.index !== -1) return // not interested in fragments until they have coalesced
+
+      // messages must be parsable
+      try { value = JSON.parse(value) } catch { return }
+
+      // messages must have content
+      if (!value || !value.content) return
+
+      // messages must have a type
+      if (typeof value.type !== 'string') return
+
+      console.log(value, packet)
+      // onMessage(value, packet)
+    })
+  }
+
+  //
   // Handle output from the LLM and input from the user.
   //
   let elCurrentMessage = null
@@ -173,9 +199,8 @@ async function Messages (props) {
     }
 
     if (elCurrentMessage) { // just update the last message
-      elCurrentMessage
-        .querySelector('.message')
-        .appendChild(document.createTextNode(data))
+      const elMessage = elCurrentMessage.querySelector('.message')
+      if (elMessage) elMessage.appendChild(document.createTextNode(data))
     }
   })
 

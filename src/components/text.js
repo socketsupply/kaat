@@ -9,6 +9,17 @@ function Text (props, ...children) {
 
   const el = input({ ...props, style: styleInput })
 
+  Object.defineProperty(this, 'value', {
+    get: function () {
+      return this.querySelector('input').value
+    },
+    set: function (s) {
+      this.querySelector('input').value = s
+    },
+    enumerable: true,
+    configurable: true
+  })
+
   this.focus = pos => {
     el.focus()
 
@@ -74,7 +85,7 @@ function Text (props, ...children) {
   return (
     div({ class: 'wrapper', style: styleWrapper },
       props.label && label(props.label),
-      props.icon && button({ class: 'icon' },
+      props.icon && button({ class: 'icon', data: { event: props.icon } },
         svg({ class: 'app-icon' },
           use({ 'xlink:href': `#${props.icon}` })
         )

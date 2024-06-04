@@ -81,6 +81,11 @@ async function Profile (props) {
       elMain.style.transform = `scale(${Math.min(scale, 1)})`
       elMain.style.transformOriginY = `${vProfileTransformOrigin}%`
     },
+    begin: function (event) {
+      if (['BUTTON', 'INPUT'].includes(event.target.tagName)) {
+        this.isInteractive = false
+      }
+    },
     during: function (event) {
       if (this.dy < 40) return // Ignore upward movements for pull-to-dismiss functionality
 
@@ -125,6 +130,20 @@ async function Profile (props) {
       )
     ),
     div({ class: 'content' },
+      div({ class: 'grid' },
+        Text({
+          errorMessage: 'Accepts A-Z, 0-9, and "_"',
+          label: 'Nickname',
+          pattern: '[a-zA-Z0-9_]+',
+          placeholder: 'Ace Quxx'
+        }),
+        Text({
+          label: 'Public Key',
+          readonly: 'true',
+          icon: 'copy-icon',
+          placeholder: 'Channel Key'
+        })
+      ),
       PeerInfo({ id: 'peer-info' })
     )
   ]

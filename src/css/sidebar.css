@@ -1,4 +1,5 @@
-modal#manage-channel .grid {
+modal#manage-channel .grid,
+modal#create-channel .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;

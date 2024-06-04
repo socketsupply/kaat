@@ -12,7 +12,7 @@ function Avatar (props) {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
     svg.setAttribute('viewBox', '-1.5 -1.5 8 8')
     svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
-    svg.setAttribute('fill', props.fill ?? '#666')
+    svg.setAttribute('fill', props.fill ?? 'var(--x-primary)')
     svg.setAttribute('title', id)
 
     for (let i = 0; i < 25; i++) {
@@ -30,7 +30,7 @@ function Avatar (props) {
   }
 
   return (
-    div({ class: 'icon', style: { backgroundColor: `var(--relay-avatar-bg-${bg})` } },
+    div({ class: 'icon', style: { backgroundColor: `var(--x-window-${bg})` } },
       createIcon(props.nick)
     )
   )

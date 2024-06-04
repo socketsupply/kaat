@@ -77,6 +77,12 @@ async function Sidebar (props) {
       // TODO create a channel
       //
     }
+
+    if (match('[data-event="copy-icon"]')) {
+      const el = match('[data-event="copy-icon"]')
+      const text = el.closest('text')
+      await navigator.clipboard.writeText(text.value)
+    }
   }
 
   const { data: dataChannels } = await db.channels.readAll()
@@ -107,12 +113,21 @@ async function Sidebar (props) {
         style: { width: '420px' },
         buttons: [{ value: 'ok', label: 'OK' }]
       },
-      Text({
-        errorMessage: 'Nope',
-        label: 'Channel Name',
-        pattern: '[a-zA-Z0-9 ]+',
-        placeholder: 'Space Camp'
-      })
+      div({ class: 'grid' },
+        Text({
+          errorMessage: 'Nope',
+          label: 'Channel Name',
+          pattern: '[a-zA-Z0-9 ]+',
+          placeholder: 'Space Camp'
+        }),
+        Text({
+          errorMessage: 'Nope',
+          label: 'Secret Key',
+          type: 'password',
+          icon: 'copy-icon',
+          placeholder: 'Channel Key'
+        })
+      )
     ),
 
     Modal(

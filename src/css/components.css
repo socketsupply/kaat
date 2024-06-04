@@ -156,9 +156,10 @@ text[edited] input:invalid ~ .x--text-invalid {
 
 text input {
   border: none;
-  padding: 6px 8px;
+  padding: 8px;
   font-size: 14px;
   width: 100%;
+  color: var(--x-primary);
   background-color: var(--x-input-background);
 }
 
@@ -193,8 +194,8 @@ text .wrapper {
 
 text .wrapper label {
   position: absolute;
-  top: -18px;
-  font-size: 10px;
+  top: -20px;
+  font-size: 12px;
   text-transform: uppercase;
   color: var(--x-info);
 }
