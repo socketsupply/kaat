@@ -1,0 +1,173 @@
+
+/* Modal */
+
+@keyframes modalSwellIn {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.02);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes modalSwellOut {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  20% {
+    transform: scale(1.01);
+  }
+  60% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+}
+
+modal .dialog {
+  background: var(--x-window);
+  border: none;
+  border-radius: 12px;
+  min-height: 30vh;
+  min-width: 40vw;
+  box-shadow: 0 2px 10px var(--x-modal-overlay);
+  transition: all .3s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+modal .dialog > header {
+  height: 50px;
+  display: grid;
+  grid-template-columns: 34px 1fr 34px;
+  justify-content: center;
+  align-content: center;
+
+  .title {
+    text-align: center;
+  }
+}
+
+modal .dialog > main {
+  padding: 20px;
+}
+
+modal.open .dialog {
+  animation: modalSwellIn 0.3s forwards ease;
+  pointer-events: auto;
+}
+
+modal.close .dialog {
+  animation: modalSwellOut 0.3s forwards ease;
+  pointer-events: none;
+}
+
+modal .overlay {
+  z-index: -1;
+  opacity: 0;
+  position: fixed;
+  display: grid;
+  justify-content: center;
+  align-content: center;
+  top: 0; bottom: 0; left: 0; right: 0;
+  background-color: var(--x-modal-overlay);
+  transition: all 0.3s ease;
+}
+
+modal.open .overlay {
+  z-index: 1000;
+  opacity: 1;
+}
+
+/* Text */
+
+text .x--text-invalid {
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: 13px;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  width: fit-content;
+  transform: translate(-50%, -10px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s ease 1s;
+  visibility: hidden;
+  opacity: 0;
+  z-index: 1;
+}
+
+text .x--text-invalid span {
+  color: white;
+  padding: 10px;
+  background-color: var(--x-error, #f66);
+  border-radius: 2px;
+  position: relative;
+  display: inline-block;
+  margin: 0 auto;
+}
+
+text .x--text-invalid span:after {
+  content: '';
+  width: 0;
+  height: 0;
+  display: block;
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid var(--x-error, #f66);
+}
+
+text[edited] input[invalid]:focus,
+text[edited] input:invalid:focus,
+text[edited] input[invalid],
+text[edited] input:invalid {
+  border-color: var(--x-error);
+}
+
+text[edited] input[invalid] ~ .x--text-invalid,
+text[edited] input:invalid ~ .x--text-invalid {
+  transform: translate(-50%, 0);
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 1s ease 0s;
+}
+
+text input {
+  border: none;
+  padding: 4px 8px;
+  font-size: 14px;
+}
+
+text input:focus {
+  background-color: var(--x-input-background-focus);
+  outline: none;
+}
+
+text .wrapper {
+  position: relative;
+  display: inline-block;
+  border: 1px solid var(--x-border);
+}
+
+text input[disabled] {
+  background-color: transparent;
+}
+
+text[label] .x--text-invalid {
+  margin-bottom: -13px;
+}
+
+
