@@ -7,14 +7,39 @@ function Modal (props, ...children) {
 
   let escapeListener
 
+  //
+  // reparenting the component allows us to declare it
+  // where ever we want but then ensure its global.
+  //
+  this.on('connected', event => {
+    const el = this.parentNode.removeChild(this)
+    document.body.appendChild(el)
+  })
+
+  const close = () => {
+    this.classList.remove('open')
+    this.classList.add('close')
+
+    const animationend = () => {
+      this.classList.remove('close')
+      this.removeEventListener('animationend', animationend)
+    }
+
+    this.addEventListener('animationend', animationend)
+
+    // Remove event listener for Escape key
+    window.removeEventListener('keydown', escapeListener)
+  }
+
   this.on('click', (event, is) => {
     switch (true) {
       case !!is('button.close'): {
-        this.close()
+        close()
         break
       }
-      case !!is('[value]'): {
-        this.resolve(is('[value]'))
+      case !!is('[data-value]'): {
+        this.resolve(is('[data-value]').dataset.value)
+        close()
         break
       }
     }
@@ -30,7 +55,7 @@ function Modal (props, ...children) {
     // Add event listener for Escape key
     escapeListener = (event) => {
       if (event.key === 'Escape') {
-        this.close()
+        close()
       }
     }
     window.addEventListener('keydown', escapeListener)
@@ -39,19 +64,8 @@ function Modal (props, ...children) {
   }
 
   this.close = async () => {
+    close()
     this.resolve()
-    this.classList.remove('open')
-    this.classList.add('close')
-
-    const animationend = () => {
-      this.classList.remove('close')
-      this.removeEventListener('animationend', animationend)
-    }
-
-    this.addEventListener('animationend', animationend)
-
-    // Remove event listener for Escape key
-    window.removeEventListener('keydown', escapeListener)
   }
 
   return (

@@ -9,7 +9,7 @@ function Text (props, ...children) {
 
   const el = input({ ...props, style: styleInput })
 
-  this.setFocus = pos => {
+  this.focus = pos => {
     el.focus()
 
     try {
@@ -62,7 +62,7 @@ function Text (props, ...children) {
     }
   })
 
-  this.setFocus(state.pos)
+  this.focus(state.pos)
 
   const styleWrapper = {
     position: 'relative',

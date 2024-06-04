@@ -37,7 +37,7 @@ async function Sidebar (props) {
     // ...this component is ready
   })
 
-  const click = (event, match) => {
+  const click = async (event, match) => {
     if (match('#profile-open')) {
       const elProfile = document.getElementById('profile')
       elProfile.moveTo(vProfilePositionTop)
@@ -45,7 +45,10 @@ async function Sidebar (props) {
 
     if (match('#create-channel-open')) {
       const elDialog = document.getElementById('create-channel')
-      elDialog.open()
+      const res = await elDialog.open()
+      //
+      // TODO create a channel
+      //
     }
   }
 
@@ -68,6 +71,19 @@ async function Sidebar (props) {
     ),
     div({ class: 'content' },
       await Channels({ id: 'channels', data: [...dataChannels.values()] })
+    ),
+    Modal(
+      {
+        id: 'create-channel',
+        title: 'Create Channel',
+        buttons: [{ value: 'ok', label: 'OK' }]
+      },
+      Text({
+        errorMessage: 'Nope',
+        label: 'Channel Name',
+        pattern: '[a-zA-Z0-9 ]+',
+        placeholder: 'Space Camp'
+      })
     )
   ]
 }

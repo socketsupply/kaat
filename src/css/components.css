@@ -44,6 +44,8 @@ modal .dialog {
   transition: all .3s ease;
   opacity: 0;
   pointer-events: none;
+  display: grid;
+  grid-template-rows: 50px 1fr 50px;
 }
 
 modal .dialog > header {
@@ -60,6 +62,13 @@ modal .dialog > header {
 
 modal .dialog > main {
   padding: 20px;
+}
+
+modal .dialog > footer {
+  height: 50px;
+  display: grid;
+  justify-content: end;
+  padding: 0 20px;
 }
 
 modal.open .dialog {
@@ -147,7 +156,7 @@ text[edited] input:invalid ~ .x--text-invalid {
 
 text input {
   border: none;
-  padding: 4px 8px;
+  padding: 6px 8px;
   font-size: 14px;
 }
 
@@ -160,6 +169,14 @@ text .wrapper {
   position: relative;
   display: inline-block;
   border: 1px solid var(--x-border);
+}
+
+text .wrapper label {
+  position: absolute;
+  top: -18px;
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--x-info);
 }
 
 text input[disabled] {

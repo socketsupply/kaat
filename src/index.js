@@ -140,10 +140,6 @@ async function App () {
       ),
       await Messages({ id: 'messages', class: 'view', ...context }),
       await Sidebar({ id: 'sidebar', class: 'view', ...context })
-    ),
-    Modal(
-      { id: 'create-channel' },
-      Text({ errorMessage: 'Nope', pattern: 'xyz' })
     )
   ]
 }

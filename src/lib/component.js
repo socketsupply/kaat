@@ -1,6 +1,6 @@
 /**
  *
- * A simple React-like component system using plain JavaScript. No compilers. <100 LoC.
+ * A simple React-like component system using plain JavaScript.
  *
  * Notes:
  *   - JSX-like syntax but no DSL, plain old JS.
@@ -82,12 +82,6 @@ const createElement = (t, ...args) => {
       el.appendChild(document.createTextNode(c))
     } else if (c instanceof globalThis.Node) {
       el.appendChild(c)
-      c.dispatchEvent(new CustomEvent('connected', { detail: { element: c } }))
-      //
-      // we could use a MutationObserver to determine if c is disconnected
-      // but i just don't care about most of the other component life-cycle
-      // methods, would accept a PR that implemented them though.
-      //
     } else if (typeof c === 'function') {
       el.addEventListener(c.name, e => c(e, match(e.target)))
     } else if (typeof c === 'object' && c !== null) {
@@ -122,6 +116,8 @@ const createElement = (t, ...args) => {
  * @type {Object<string, Function>}
  */
 for (const tag of tags) globalThis[tag] = (...args) => createElement(tag, ...args)
+
+const observables = []
 
 /**
  * Registers a component function.
@@ -180,6 +176,8 @@ export function Register (Fn) {
       }
 
       apply(args)
+
+      observables.push(el)
       return el
     }
   })
@@ -197,11 +195,32 @@ Register.state = {}
  */
 export async function createRoot (Fn, el) {
   const fn = Register(Fn)
+  let root
 
   try {
-    const root = await fn()
+    root = await fn()
     el.appendChild(root)
   } catch (err) {
     throw err
   }
+
+  const processNodes = (nodes, eventType) => {
+    for (const node of nodes) {
+      const index = observables.findIndex(el => el === node)
+      if (index == -1) continue
+
+      const el = observables[index]
+      el.dispatchEvent(new CustomEvent(eventType, { detail: { element: el } }))
+      if (eventType === 'disconnected') observables.splice(index, 1)
+    }
+  }
+
+  const observer = new MutationObserver(list => {
+    list.forEach(mut => {
+      if (mut.removedNodes) processNodes(mut.removedNodes, 'disconnected')
+      if (mut.addedNodes) processNodes(mut.addedNodes, 'connected')
+    })
+  })
+
+  observer.observe(root, { childList: true, subtree: true, attributes: true, attributeOldValue: true })
 }
