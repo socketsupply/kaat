@@ -6,9 +6,11 @@ import { network } from './lib/network.js'
 import { database } from './lib/data.js'
 import { createRoot } from './lib/component.js'
 
-import { Profile } from './views/profile/index.js'
 import { Messages } from './views/messages/index.js'
+import { Profile } from './views/profile/index.js'
 import { Sidebar } from './views/sidebar/index.js'
+
+import { Modal } from './components/modal.js'
 
 //
 // The main component, this is the program entry point.
@@ -100,7 +102,7 @@ async function App () {
   //
   // Pretty much a global click handler for anything in the app.
   //
-  function click (event, match) {
+  async function click (event, match) {
     const el = match('#sidebar-toggle')
 
     if (el) {
@@ -137,11 +139,15 @@ async function App () {
       ),
       await Messages({ id: 'messages', class: 'view', ...context }),
       await Sidebar({ id: 'sidebar', class: 'view', ...context })
+    ),
+    Modal(
+      { id: 'create-channel' }, 
+      div('cool')
     )
   ]
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
   createRoot(App, document.body)
   document.body.classList.remove('loading')
 })

@@ -3,12 +3,61 @@ import process from 'socket:process'
 import { Register } from '../../lib/component.js'
 import { Spring } from '../../lib/spring.js'
 
+async function PeerInfo (props) {
+  let shortPeerId = 'Working...'
+  let combinedAddress = 'Working...'
+  let natType = 'Working...'
+
+  if (props.peerId) {
+    shortPeerId = props.peerId?.slice(0, 6) + '..' + props.peerId?.slice(-4)
+    combinedAddress = `${props.address}:${props.port}`
+    natType = props.natName
+  }
+
+  return (
+    table(
+      thead(
+        tr(
+          th('Property'),
+          th('Value')
+        )
+      ),
+      tbody(
+        tr(
+          td('Id'),
+          td(shortPeerId)
+        ),
+        tr(
+          td('Address'),
+          td(combinedAddress)
+        ),
+        tr(
+          td('Nat Type'),
+          td(natType)
+        )
+      )
+    )
+  )
+}
+
+PeerInfo = Register(PeerInfo)
+
 async function Profile (props) {
-  const vProfilePositionTop = props.isMobile ? 90 : 48
-  const vProfileTransformOrigin = props.isMobile ? 100 : 80
-  const vProfileTransformMag = props.isMobile ? 0.5 : 0.08
+  const {
+    net,
+    isMobile
+  } = props
+
+  const vProfilePositionTop = isMobile ? 90 : 48
+  const vProfileTransformOrigin = isMobile ? 100 : 80
+  const vProfileTransformMag = isMobile ? 0.5 : 0.05
 
   let elMain
+
+  net.socket.on('#ready', networkInfo => {
+    const elPeerInfo = this.querySelector('peer-info')
+    elPeerInfo.render(networkInfo)
+  })
 
   const spring = new Spring(this, {
     axis: 'Y',
@@ -26,6 +75,8 @@ async function Profile (props) {
       if (!elMain) {
         elMain = document.getElementById('main')
       }
+
+      document.body.style.background = `rgba(0, 0, 0, ${Math.min(1, Math.max(0, opacity))})`
 
       elMain.style.transform = `scale(${Math.min(scale, 1)})`
       elMain.style.transformOriginY = `${vProfileTransformOrigin}%`
@@ -73,7 +124,9 @@ async function Profile (props) {
         )
       )
     ),
-    div({ class: 'content' })
+    div({ class: 'content' },
+      await PeerInfo({ id: 'peer-info' })
+    )
   ]
 }
 

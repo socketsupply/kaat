@@ -1,6 +1,6 @@
 /**
  *
- * A simple React-like component system using plain JavaScript. No compilers. <80 LoC.
+ * A simple React-like component system using plain JavaScript. No compilers. <100 LoC.
  *
  * Notes:
  *   - JSX-like syntax but no DSL, plain old JS.
@@ -8,13 +8,14 @@
  *   - Empty root is weird, allow components to return arrays.
  *   - Anything returned is appended to the root.
  *   - No esscape opportunities from big template literals.
+ *   - No subtle errors from malformed HTML
  *   - Insde the component, 'this' is the dom element.
  *
  * Usage:
  *
  * ```js
  * async function Counter (props, ...children) {
- *   this.addEventListener('ready', e => {
+ *   this.on('connected', e => {
  *     // ...this component is ready
  *   })
  *
@@ -61,10 +62,7 @@ const tags = 'a,abbr,address,area,article,aside,audio,b,base,bdi,bdo,blockquote,
  * @param {HTMLElement} el - The element to match.
  * @returns {Function} - A function that takes a selector string and returns the matching element or its closest ancestor.
  */
-const match = el => s => {
-  if (!el.matches) el = el.parentElement
-  return el.matches(s) ? el : el.closest(s)
-}
+const match = el => s => (el.matches ? el : el.parentElement).closest(s)
 
 /**
  * Creates an HTML element or uses an existing element.
@@ -73,7 +71,7 @@ const match = el => s => {
  * @returns {HTMLElement} - The created or updated HTML element.
  */
 const createElement = (t, ...args) => {
-  if (t === 'svg' || t === 'use') {
+  if (['svg', 'use'].includes(t)) {
     t = document.createElementNS('http://www.w3.org/2000/svg', t)
   }
 
@@ -84,7 +82,12 @@ const createElement = (t, ...args) => {
       el.appendChild(document.createTextNode(c))
     } else if (c instanceof globalThis.Node) {
       el.appendChild(c)
-      c.dispatchEvent(new CustomEvent('ready', { detail: { element: c } }))
+      c.dispatchEvent(new CustomEvent('connected', { detail: { element: c } }))
+      //
+      // we could use a MutationObserver to determine if c is disconnected
+      // but i just don't care about most of the other component life-cycle
+      // methods, would accept a PR that implemented them though.
+      //
     } else if (typeof c === 'function') {
       el.addEventListener(c.name, e => c(e, match(e.target)))
     } else if (typeof c === 'object' && c !== null) {
@@ -97,7 +100,7 @@ const createElement = (t, ...args) => {
           if (el.tagName === 'svg') el.setAttribute('class', v)
           else el.className = v
         } else if (k === 'data') {
-          el.dataset[k] = v
+          Object.entries(v).forEach(a => el.dataset[a[0]] = a[1])
         } else if (el.tagName === 'use' || k === 'contenteditable') {
           if (k.includes('xlink')) {
             el.setAttributeNS('http://www.w3.org/1999/xlink', k, v);
@@ -118,58 +121,73 @@ const createElement = (t, ...args) => {
  * A collection of functions to create HTML elements.
  * @type {Object<string, Function>}
  */
-for (const tag of tags) {
-  globalThis[tag] = (...args) => createElement(tag, ...args)
-}
+for (const tag of tags) globalThis[tag] = (...args) => createElement(tag, ...args)
 
 /**
  * Registers a component function.
  * @param {Function} Fn - The component function to register.
  * @returns {Function} - The registered component function wrapped in a Proxy.
  */
-/**
- * Registers a component function.
- * @param {Function} Fn - The component function to register.
- * @returns {Function} - The registered component function wrapped in a Proxy.
- */
-export function Register (...args) {
-  const register = Fn => {
-    /* eslint-disable no-new-func */
-    globalThis[Fn.name] = new Proxy(Fn, {
-      /**
-       * Handles the application of the component function.
-       * @param {Function} target - The original component function.
-       * @param {Object} self - The value of `this` provided for the call to `target`.
-       * @param {Array} argumentsList - The list of arguments for the call to `target`.
-       * @returns {Promise<HTMLElement>} - The created HTML element.
-       */
-      apply: async (target, self, argumentsList) => {
-        const el = createElement(Fn.name, ...argumentsList)
-        /**
-         * Renders the component with updated properties.
-         * @param {...*} args - The updated properties.
-         */
-        el.render = async (...args) => {
-          el.innerHTML = ''
-          const props = { ...argumentsList[0], ...args[0] }
-          const children = args.flat().filter(a => a instanceof globalThis.Node)
-          const tree = await Reflect.apply(target, el, [props, ...children])
-          if (tree) [tree].flat().forEach(node => el.appendChild(node))
-        }
+export function Register (Fn) {
+  const collect = (el, tree) => [tree].flat().forEach(node => el.appendChild(node))
+  const hyphenate = (name) => name.match(/[A-Z][a-z0-9]*/g).join('-').toLowerCase()
+  const children = (args) => args.flat().filter(a => a instanceof globalThis.Node)
 
-        const tree = await Reflect.apply(target, el, argumentsList)
-        if (tree) [tree].flat().forEach(node => el.appendChild(node)) // allow arrays
+  globalThis[Fn.name] = new Proxy(Fn, {
+    /**
+     * Handles the application of the component function.
+     * @param {Function} target - The original component function.
+     * @param {Object} self - The value of `this` provided for the call to `target`.
+     * @param {Array} argumentsList - The list of arguments for the call to `target`.
+     * @returns {Promise<HTMLElement>} - The created HTML element.
+     */
+    apply: (target, self, args) => {
+      const el = createElement(hyphenate(Fn.name), ...args)
 
-        return el
+      if (args[0]?.id) { // if there is an id, check the state manager
+        if (!Register.state[args[0].id]) Register.state[args[0].id] = {}
+        el.state = Register.state[args[0].id]
       }
-    })
 
-    return globalThis[Fn.name]
-  }
+      el.on = (s, fn) => {
+        const listener = e => fn.apply(el, [e, match(e.target)])
+        el.addEventListener(s, listener)
+        return listener
+      }
 
-  if (args.length > 1) return args.map(register)
-  return register(args[0])
+      el.off = (s, fn) => el.removeEventListener(s, fn)
+
+      async function apply (args) {
+        let result
+
+        try {
+          result = target.apply(el, [args[0], ...children(args)])
+        } catch (err) { throw err }
+
+        if (result?.constructor.name === 'Promise') {
+          try {
+            collect(el, await result)
+          } catch (err) { throw err }
+        } else if (result) {
+          collect(el, result)
+        }
+      }
+
+      el.render = async (updates) => {
+        el.innerHTML = ''
+        el.replaceWith(el.cloneNode(true))
+        await apply([{ ...args[0], ...updates }])
+      }
+
+      apply(args)
+      return el
+    }
+  })
+
+  return globalThis[Fn.name]
 }
+
+Register.state = {}
 
 /**
  * Creates the root component and appends it to the specified element.
@@ -177,15 +195,13 @@ export function Register (...args) {
  * @param {HTMLElement} el - The element to append the root component to.
  * @returns {Promise<void>}
  */
-export async function createRoot (fn, el) {
-  const c = Register(fn)
-  let root
+export async function createRoot (Fn, el) {
+  const fn = Register(Fn)
 
   try {
-    root = await c()
+    const root = await fn()
+    el.appendChild(root)
   } catch (err) {
     throw err
   }
-
-  el.appendChild(root)
 }

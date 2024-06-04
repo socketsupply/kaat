@@ -38,7 +38,7 @@
     --x-success: rgba(133, 178, 116, 1);
     --x-warning: rgba(249, 169, 103, 1);
     --x-info: rgba(153, 157, 160, 1);
-    --x-overlay: rgba(255, 255, 255, 0.75);
+    --x-modal-overlay: rgba(0, 0, 0, 0.24);
 
     --x-avatar-bg-0: #B5E1FF;
     --x-avatar-bg-1: #A6D7F7;
@@ -98,7 +98,7 @@
     --x-success: rgba(133, 178, 116, 1);
     --x-warning: rgba(249, 169, 103, 1);
     --x-info: rgba(72, 72, 72, 1);
-    --x-overlay: rgba(0, 0, 0, 0.40);
+    --x-modal-overlay: rgba(0, 0, 0, 0.40);
 
     --x-avatar-bg-0: #C7E8FF;
     --x-avatar-bg-1: #B8DFFC;

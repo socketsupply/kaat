@@ -3,6 +3,7 @@ import process from 'socket:process'
 import { Register } from '../../lib/component.js'
 import { Spring } from '../../lib/spring.js'
 import { Avatar } from '../../components/avatar.js'
+import { RelativeTime } from '../../components/relative-time.js'
 
 async function Message (props) {
   const messageClass = props.mine === true
@@ -10,9 +11,10 @@ async function Message (props) {
     : 'message-wrapper'
 
   return div({ class: messageClass },
+    await Avatar(props),
     div({ class: 'author' },
-      await Avatar(props),
-      div({ class: 'nick' }, '@', props.nick)
+      div({ class: 'nick' }, '@', props.nick, ' - '),
+      div({ class: 'timestamp' }, await RelativeTime(props))
     ),
     div({ class: 'message' }, props.body)
   )
@@ -109,12 +111,22 @@ async function Messages (props) {
       isPanning = false
     },
     complete: function () {
+      if (!elBuffer) elBuffer = document.getElementById('message-buffer')
       elBuffer.style.overflow = 'auto'
     }
   })
 
   this.moveTo = spring.moveTo.bind(spring)
   this.updateTransform = spring.updateTransform.bind(spring)
+
+  //
+  // Add a method to create and append a message from outside the component view
+  //
+  this.insertMessage = async props => {
+    const m = await Message(props)
+    const messagesBuffer = this.querySelector('.buffer-content')
+    messagesBuffer.prepend(m)
+  }
 
   //
   // Handle output from the LLM and input from the user.
@@ -154,7 +166,7 @@ async function Messages (props) {
       data = data.trim() // first token should not be empty
 
       if (data) {
-        elCurrentMessage = await Message({ body: data, nick: 'ai', mine: false })
+        elCurrentMessage = await Message({ body: data, nick: 'system', mine: false, timestamp: Date.now() })
         const messagesBuffer = this.querySelector('.buffer-content')
         if (elCurrentMessage) messagesBuffer.prepend(elCurrentMessage)
       }
@@ -172,7 +184,7 @@ async function Messages (props) {
     const data = elInputMessage.innerText.trim()
 
     if (!data.length) return
-    elCurrentMessage = await Message({ body: data, mine: true, nick: 'me' })
+    elCurrentMessage = await Message({ body: data, mine: true, nick: 'me', timestamp: Date.now() })
 
     const messagesBuffer = this.querySelector('.buffer-content')
     if (elCurrentMessage) messagesBuffer.prepend(elCurrentMessage)
@@ -248,7 +260,7 @@ async function Messages (props) {
   //
   return [
     header({ class: 'primary draggable' },
-      span({ class: 'title' }, '#P2P')
+      span({ class: 'title' }, '#general')
     ),
     div({ class: 'content' },
 

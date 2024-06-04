@@ -22,7 +22,7 @@ body.loading {
   opacity: 0;
 }
 
-main {
+#main {
   position: absolute;
   top: 0;
   left: 0;
@@ -108,14 +108,6 @@ header.draggable {
   position: relative;
 }
 
-#profile.view > header {
-  background: transparent;
-}
-
-.content {
-  margin: 20px;
-}
-
 #sidebar-toggle {
   position: fixed;
   top: 10px;
@@ -123,39 +115,6 @@ header.draggable {
   width: 42px;
   height: 32px;
   z-index: 3;
-}
-
-#profile {
-  position: absolute;
-  height: 100vh;
-  width: 100vw;
-  transform: translateY(100%) scale(0.95);
-  opacity: 0;
-  background: var(--x-window);
-  z-index: 4;
-  will-change: transform;
-  border-radius: 12px 12px 0 0;
-  box-shadow: 0px 0px 24px -10px rgba(0, 0, 0, 1);
-}
-
-#profile-open {
-  width: fit-content;
-  background: transparent;
-  width: 32px;
-  height: 32px;
-}
-
-#profile-close {
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 34px;
-  height: 50px;
-  border-radius: 12px;
-  background: transparent;
-  font-size: 22px;
-  border: none;
-  -webkit-appearance: none;
 }
 
 #sidebar {
@@ -178,8 +137,8 @@ header.draggable {
       margin: 0;
       width: 280px;
       padding-right: 10px;
-      
-      #add-group,
+
+      #create-channel-open,
       #profile-open {
         place-self: end;
 
@@ -193,10 +152,10 @@ header.draggable {
   }
  
   > .content {
-    width: 240px;
+    width: 280px;
+    padding: 20px;
   }
 
-  .group,
   .channel {
     padding: 8px;
     font-size: 16px;
@@ -219,10 +178,6 @@ header.draggable {
       }
     }
   }
-
-  .channel {
-    text-indent: 16px;
-  }
 }
 
 /**
@@ -244,7 +199,7 @@ body[platform="ios"] {
   }
 
   #profile,
-  main {
+  #main {
     border-radius: 30px 30px 0 0;
   }
 
