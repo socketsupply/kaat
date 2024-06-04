@@ -3,14 +3,14 @@ import process from 'socket:process'
 import { Register } from '../../lib/component.js'
 import { Spring } from '../../lib/spring.js'
 
-async function PeerInfo (props) {
+function PeerInfo (props) {
   let shortPeerId = 'Working...'
   let combinedAddress = 'Working...'
   let natType = 'Working...'
 
   if (props.peerId) {
     shortPeerId = props.peerId?.slice(0, 6) + '..' + props.peerId?.slice(-4)
-    combinedAddress = `${props.address}:${props.port}`
+    combinedAddress = `${props?.address}:${props?.port}`
     natType = props.natName
   }
 
@@ -55,7 +55,7 @@ async function Profile (props) {
   let elMain
 
   net.socket.on('#ready', networkInfo => {
-    const elPeerInfo = this.querySelector('peer-info')
+    const elPeerInfo = document.querySelector('peer-info')
     elPeerInfo.render(networkInfo)
   })
 
@@ -125,7 +125,7 @@ async function Profile (props) {
       )
     ),
     div({ class: 'content' },
-      await PeerInfo({ id: 'peer-info' })
+      PeerInfo({ id: 'peer-info' })
     )
   ]
 }

@@ -1,4 +1,5 @@
 import { Register } from '../lib/component.js'
+import { Button } from './button.js'
 
 function Modal (props, ...children) {
   const {
@@ -14,6 +15,33 @@ function Modal (props, ...children) {
   this.on('connected', event => {
     const el = this.parentNode.removeChild(this)
     document.body.appendChild(el)
+  })
+
+  //
+  // This component implements a "slot pattern". When rendered,
+  // it inserts the supplied tree into it's own tree. When the
+  // .render method is called, it finds all the leaf nodes that
+  // have slots and fills them with prop values. For example...
+  //
+  // // At the call site...
+  //
+  // myModal.render({ slots: { name: 'alice' })
+  //
+  // // At declartion...
+  //
+  // Modal({
+  //   Text({ data: { slot: 'name' } })
+  // })
+  //
+  this.on('updated', event => {
+    if (!props.slots) return
+
+    const nodes = [...this.querySelectorAll('[data-slot]')]
+
+    for (const node of nodes) {
+      const slot = node.dataset.slot
+      if (props.slots[slot]) node.value = props.slots[slot]
+    }
   })
 
   const close = () => {
@@ -47,10 +75,14 @@ function Modal (props, ...children) {
 
   this.open = async () => {
     if (this.promise) this.resolve()
+    
     const { promise, resolve } = Promise.withResolvers()
     this.resolve = resolve
     this.promise = promise
-    this.classList.add('open')
+
+    requestAnimationFrame(() => {
+      this.classList.add('open')
+    })
 
     // Add event listener for Escape key
     escapeListener = (event) => {
@@ -58,8 +90,8 @@ function Modal (props, ...children) {
         close()
       }
     }
-    window.addEventListener('keydown', escapeListener)
 
+    window.addEventListener('keydown', escapeListener)
     return promise
   }
 
@@ -70,10 +102,10 @@ function Modal (props, ...children) {
 
   return (
     div({ class: 'overlay' },
-      div({ class: 'dialog' },
+      div({ class: 'dialog', ...props },
         header({ class: 'draggable' },
           span({ class: 'spacer' }),
-          span({ class: 'title' }, props.title || 'Dialog'),
+          span({ class: 'title' }, props.header || 'Dialog'),
           button({ class: 'close' },
             svg({ class: 'app-icon' },
               use({ 'xlink:href': '#close-icon' })
@@ -82,7 +114,7 @@ function Modal (props, ...children) {
         ),
         main({ class: 'content' }, ...children),
         footer(buttons.map(config =>
-          button({ data: { value: config.value } }, config.label)
+          Button({ data: { value: config.value } }, config.label)
         ))
       )
     )

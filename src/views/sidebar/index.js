@@ -3,15 +3,42 @@ import process from 'socket:process'
 import { Register } from '../../lib/component.js'
 
 async function Channels (props) {
-  return props.data.map(channel => {
-    const channelId = Buffer.from(channel.subclusterId).toString('base64')
+  //
+  // When a channel is clicked, activate or manage it.
+  //
+  const click = async (event, match) => {
+    const el = match('[data-event]')
+    if (!el) return
 
+    switch (el.dataset.event) {
+      case 'manage-channel': {
+
+        const channel = props.data.find(ch => ch.subclusterId === el.dataset.value)
+        if (!channel) return
+
+        const elDialog = document.getElementById('manage-channel')
+
+        elDialog.render({
+          slots: {
+            channelName: channel.label,
+            key: channel.key
+          }
+        })
+
+        const res = await elDialog.open()
+      }
+    }
+  }
+
+  return props.data.map(channel => {
     return (
-      div({ class: 'channel', data: { channelId } },
+      div(
+        { class: 'channel', data: { value: channel.subclusterId }, click },
         span({ class: 'label' },
           span('#', { class: 'channel-symbol' }), channel.label
         ),
-        button({ id: 'add-channel' },
+        button(
+          { data: { event: 'manage-channel', value: channel.subclusterId } },
           svg({ class: 'app-icon' },
             use({ 'xlink:href': '#config-icon' })
           )
@@ -72,10 +99,12 @@ async function Sidebar (props) {
     div({ class: 'content' },
       await Channels({ id: 'channels', data: [...dataChannels.values()] })
     ),
+
     Modal(
       {
         id: 'create-channel',
-        title: 'Create Channel',
+        header: 'Create Channel',
+        style: { width: '420px' },
         buttons: [{ value: 'ok', label: 'OK' }]
       },
       Text({
@@ -84,6 +113,35 @@ async function Sidebar (props) {
         pattern: '[a-zA-Z0-9 ]+',
         placeholder: 'Space Camp'
       })
+    ),
+
+    Modal(
+      {
+        id: 'manage-channel',
+        header: 'Manage Channel',
+        style: { width: '420px' },
+        buttons: [
+          { value: 'ok', label: 'OK' },
+          { value: 'delete', label: 'Delete' }
+        ]
+      },
+      div({ class: 'grid' },
+        Text({
+          errorMessage: 'Nope',
+          label: 'Channel Name',
+          data: { slot: 'channelName' },
+          pattern: '[a-zA-Z0-9 ]+',
+          placeholder: 'Space Camp'
+        }),
+        Text({
+          errorMessage: 'Nope',
+          label: 'Secret Key',
+          data: { slot: 'key' },
+          type: 'password',
+          icon: 'copy-icon',
+          placeholder: 'Channel Key'
+        })
+      )
     )
   ]
 }

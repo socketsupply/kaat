@@ -153,26 +153,24 @@ export function Register (Fn) {
 
       el.off = (s, fn) => el.removeEventListener(s, fn)
 
-      async function apply (args) {
+      function apply (args) {
         let result
 
         try {
-          result = target.apply(el, [args[0], ...children(args)])
+          result = target.apply(el, args)
         } catch (err) { throw err }
 
         if (result?.constructor.name === 'Promise') {
-          try {
-            collect(el, await result)
-          } catch (err) { throw err }
+          result.then(res => collect(el, res)).catch(err => { throw err })
         } else if (result) {
           collect(el, result)
         }
+        el.dispatchEvent(new CustomEvent('updated', { detail: { element: el } }))
       }
 
-      el.render = async (updates) => {
+      el.render = (updates) => {
         el.innerHTML = ''
-        el.replaceWith(el.cloneNode(true))
-        await apply([{ ...args[0], ...updates }])
+        apply([{ ...args[0], ...updates }, ...children(args)])
       }
 
       apply(args)

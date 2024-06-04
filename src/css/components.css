@@ -41,7 +41,6 @@ modal .dialog {
   min-height: 30vh;
   min-width: 40vw;
   box-shadow: 0 2px 10px var(--x-modal-overlay);
-  transition: all .3s ease;
   opacity: 0;
   pointer-events: none;
   display: grid;
@@ -61,14 +60,15 @@ modal .dialog > header {
 }
 
 modal .dialog > main {
-  padding: 20px;
+  padding: 0 20px;
 }
 
 modal .dialog > footer {
   height: 50px;
-  display: grid;
   justify-content: end;
   padding: 0 20px;
+  display: flex;
+  gap: 10px;
 }
 
 modal.open .dialog {
@@ -90,7 +90,7 @@ modal .overlay {
   align-content: center;
   top: 0; bottom: 0; left: 0; right: 0;
   background-color: var(--x-modal-overlay);
-  transition: all 0.3s ease;
+  transition: all 0.4s ease;
 }
 
 modal.open .overlay {
@@ -158,6 +158,12 @@ text input {
   border: none;
   padding: 6px 8px;
   font-size: 14px;
+  width: 100%;
+  background-color: var(--x-input-background);
+}
+
+text input:hover {
+  background-color: var(--x-input-background-hover);
 }
 
 text input:focus {
@@ -165,9 +171,23 @@ text input:focus {
   outline: none;
 }
 
+text button {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 26px;
+}
+
+text button ~ input {
+  padding-right: 30px;
+}
+
 text .wrapper {
+  width: 100%;
   position: relative;
   display: inline-block;
+  margin-top: 24px;
   border: 1px solid var(--x-border);
 }
 
@@ -187,4 +207,34 @@ text[label] .x--text-invalid {
   margin-bottom: -13px;
 }
 
+/* Button */
+
+button[type] {
+  height: 32px;
+  min-width: 140px;
+  border-radius: 6px;
+  color: var(--x-primary);
+  text-transform: uppercase;
+  background-color: var(--x-button-background);
+  transition: all .2s ease;
+}
+
+button[type]:hover {
+  transform: scale(1.03);
+  box-shadow: 0 1px 0 var(--x-shadow);
+  background-color: var(--x-button-background-hover);
+}
+
+button[type]:active {
+  transform: scale(0.97);
+}
+
+button[type="accent"] {
+  background-color: var(--x-accent);
+}
+
+button[type="icon"] {
+  width: 32px;
+  height: 32px;
+}
 

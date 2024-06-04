@@ -108,7 +108,7 @@ header.draggable {
   position: relative;
 }
 
-#sidebar-toggle {
+button#sidebar-toggle {
   position: fixed;
   top: 10px;
   left: 80px;
@@ -138,8 +138,8 @@ header.draggable {
       width: 280px;
       padding-right: 10px;
 
-      #create-channel-open,
-      #profile-open {
+      button#create-channel-open,
+      button#profile-open {
         place-self: end;
 
         svg {
