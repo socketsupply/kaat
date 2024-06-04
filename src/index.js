@@ -11,6 +11,7 @@ import { Profile } from './views/profile/index.js'
 import { Sidebar } from './views/sidebar/index.js'
 
 import { Modal } from './components/modal.js'
+import { Text } from './components/text.js'
 
 //
 // The main component, this is the program entry point.
@@ -141,8 +142,8 @@ async function App () {
       await Sidebar({ id: 'sidebar', class: 'view', ...context })
     ),
     Modal(
-      { id: 'create-channel' }, 
-      div('cool')
+      { id: 'create-channel' },
+      Text({ errorMessage: 'Nope', pattern: 'xyz' })
     )
   ]
 }
