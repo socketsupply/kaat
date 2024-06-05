@@ -152,6 +152,7 @@ export function Register (Fn) {
       }
 
       el.off = (s, fn) => el.removeEventListener(s, fn)
+      el.emit = (s, detail) => el.dispatchEvent(new CustomEvent(eventName, { detail }))
 
       function apply (args) {
         let result

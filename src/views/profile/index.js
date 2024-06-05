@@ -45,6 +45,7 @@ PeerInfo = Register(PeerInfo)
 async function Profile (props) {
   const {
     net,
+    db,
     isMobile
   } = props
 
@@ -58,6 +59,17 @@ async function Profile (props) {
     const elPeerInfo = document.querySelector('peer-info')
     elPeerInfo.render(networkInfo)
   })
+
+  const { data: dataPeer } = await db.state.get('peer')
+
+  let encodedPublicKey = ''
+  let nick = ''
+
+  if (dataPeer) {
+    const publicKey = dataPeer.signingKeys.publicKey
+    encodedPublicKey = Buffer.from(publicKey).toString('base64')
+    nick = dataPeer.nick
+  }
 
   const spring = new Spring(this, {
     axis: 'Y',
@@ -135,13 +147,14 @@ async function Profile (props) {
           errorMessage: 'Accepts A-Z, 0-9, and "_"',
           label: 'Nickname',
           pattern: '[a-zA-Z0-9_]+',
-          placeholder: 'Ace Quxx'
+          placeholder: 'Ace Quxx',
+          value: nick
         }),
         Text({
           label: 'Public Key',
-          readonly: 'true',
+          readOnly: 'true',
           icon: 'copy-icon',
-          placeholder: 'Channel Key'
+          value: encodedPublicKey
         })
       ),
       PeerInfo({ id: 'peer-info' })

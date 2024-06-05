@@ -10,12 +10,8 @@ function Text (props, ...children) {
   const el = input({ ...props, style: styleInput })
 
   Object.defineProperty(this, 'value', {
-    get: function () {
-      return this.querySelector('input').value
-    },
-    set: function (s) {
-      this.querySelector('input').value = s
-    },
+    get: () => el.value,
+    set: (s) => { el.value = s; },
     enumerable: true,
     configurable: true
   })

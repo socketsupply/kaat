@@ -4,3 +4,74 @@ modal#create-channel .grid {
   grid-template-columns: 1fr 1fr;
   gap: 20px;
 }
+
+#sidebar {
+  position: absolute;
+  top: 0;
+  height: 100vh;
+  width: 100vw;
+  background-color: red;
+  transform: scale(0.95);
+  opacity: 0;
+  z-index: 1;
+  will-change: transform;
+  background: var(--x-background);
+
+  header {
+    .content {
+      grid-template-columns: 1fr auto auto;
+      display: grid;
+      justify-content: end;
+      margin: 0;
+      width: 280px;
+      padding-right: 10px;
+
+      button#create-channel-open,
+      button#profile-open {
+        place-self: end;
+
+        svg {
+          width: 32px;
+          height: 32px;
+          padding: 6px;
+        }
+      }
+    }
+  }
+ 
+  > .content {
+    width: 280px;
+    padding: 20px;
+  }
+
+  .channel {
+    padding: 8px;
+    margin-bottom: 6px;
+    font-size: 16px;
+    border-radius: 8px;
+    position: relative;
+    height: 34px;
+    transition: background .1s ease;
+
+    button {
+      position: absolute;
+      right: 8px;
+      top: 6px;
+      display: none;
+    }
+
+    &[data-active="true"] {
+      background: var(--x-background-darker);
+    }
+
+    &:hover {
+      background: var(--x-shadow);
+
+      button {
+        display: block;
+      }
+    }
+  }
+}
+
+

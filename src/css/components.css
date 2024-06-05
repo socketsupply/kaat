@@ -160,6 +160,7 @@ text input {
   font-size: 14px;
   width: 100%;
   color: var(--x-primary);
+  transition: background-color .2s ease;
   background-color: var(--x-input-background);
 }
 

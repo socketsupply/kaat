@@ -14,7 +14,8 @@ const network = async db => {
     dataPeer = {
       peerId: await Encryption.createId(),
       signingKeys: await Encryption.createKeyPair(),
-      clusterId: await Encryption.createClusterId('kaat')
+      clusterId: await Encryption.createClusterId('kaat'),
+      nick: Math.random().toString(16).slice(2, 8)
     }
 
     socket = await createNetwork(dataPeer)

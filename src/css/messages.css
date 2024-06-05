@@ -30,10 +30,11 @@
   #input {
     position: relative;
     padding: 12px;
-    background: var(--x-input-background);
+    background: var(--x-background-darker);
     border-radius: 6px;
     height: auto;
     margin: 20px;
+    line-height: 18px;
   }
 
   #input #input-message {
@@ -45,12 +46,31 @@
     font-size: 16px;
     outline: none;
     padding-right: 32px;
+    z-index: 2;
   }
 
   #input #send-message {
     position: absolute;
     top: 12px;
     right: 12px;
+  }
+
+  #input .placeholder-text {
+    position: absolute;
+    color: var(--x-info);
+    pointer-events: none;
+    transform: translateX(0%);
+    transition: transform .3s ease, z-index .3s ease, opacity .3s ease;
+
+    &.hide {
+      opacity: 0;
+      transform: translateX(20%);
+    }
+
+    &.show {
+      opacity: 1;
+      transform: translateX(0%);
+    }
   }
 
   .content {
@@ -126,3 +146,17 @@
   }
 }
 
+/**
+ ** Anything sepcific to running on the desktop
+ */
+body[hardware="desktop"] {
+  #messages:not(.moving) {
+
+    /* Allow messages to be selected on desktop. */
+    /* On mobile, show a copy button */
+    .message {
+      user-select: initial;
+      -webkit-user-select: initial;
+    }
+  }
+}

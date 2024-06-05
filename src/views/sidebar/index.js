@@ -3,6 +3,13 @@ import process from 'socket:process'
 import { Register } from '../../lib/component.js'
 
 async function Channels (props) {
+  const {
+    data,
+    db
+  } = props
+
+  const { data: dataPeer } = await db.state.get('peer')
+
   //
   // When a channel is clicked, activate or manage it.
   //
@@ -13,7 +20,7 @@ async function Channels (props) {
     switch (el.dataset.event) {
       case 'manage-channel': {
 
-        const channel = props.data.find(ch => ch.subclusterId === el.dataset.value)
+        const channel = data.find(ch => ch.subclusterId === el.dataset.value)
         if (!channel) return
 
         const elDialog = document.getElementById('manage-channel')
@@ -26,14 +33,47 @@ async function Channels (props) {
         })
 
         const res = await elDialog.open()
+        break
+      }
+
+      case 'activate-channel': {
+        // Find the new channel, make sure its valid
+        const channel = data.find(ch => ch.subclusterId === el.dataset.value)
+        if (!channel) return
+
+        const { data: dataPeer } = await db.state.get('peer')
+        dataPeer.subclusterId = channel.subclusterId
+        await db.state.put('peer', dataPeer)
+
+        // Remove the active state from any other item in the list
+        ;[...this.querySelectorAll('.channel')].forEach(el => {
+          el.removeAttribute('data-active')
+        })
+
+        // Add the active state to the new item
+        el.setAttribute('data-active', 'true')
+
+        // Change the messages buffer area to show the new label
+        const elMessagesHeader = document.querySelector('#messages header .title')
+        elMessagesHeader.textContent = `#${channel.label}`
+
+        // render the Messages buffer
       }
     }
   }
 
-  return props.data.map(channel => {
+  return data.map(channel => {
     return (
       div(
-        { class: 'channel', data: { value: channel.subclusterId }, click },
+        {
+          class: 'channel',
+          data: {
+            event: 'activate-channel',
+            value: channel.subclusterId,
+            active: channel.subclusterId === dataPeer?.subclusterId
+          },
+          click
+        },
         span({ class: 'label' },
           span('#', { class: 'channel-symbol' }), channel.label
         ),
@@ -60,10 +100,6 @@ async function Sidebar (props) {
   const vProfileTransformOrigin = isMobile ? 100 : 80
   const vProfileTransformMag = isMobile ? 0.5 : 0.08
 
-  this.on('connected', e => {
-    // ...this component is ready
-  })
-
   const click = async (event, match) => {
     if (match('#profile-open')) {
       const elProfile = document.getElementById('profile')
@@ -79,6 +115,8 @@ async function Sidebar (props) {
     }
 
     if (match('[data-event="copy-icon"]')) {
+      e.preventDefault()
+
       const el = match('[data-event="copy-icon"]')
       const text = el.closest('text')
       await navigator.clipboard.writeText(text.value)
@@ -103,7 +141,7 @@ async function Sidebar (props) {
       )
     ),
     div({ class: 'content' },
-      await Channels({ id: 'channels', data: [...dataChannels.values()] })
+      await Channels({ id: 'channels', data: [...dataChannels.values()], db })
     ),
 
     Modal(

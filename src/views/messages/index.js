@@ -3,7 +3,6 @@ import process from 'socket:process'
 import { Register } from '../../lib/component.js'
 import { Spring } from '../../lib/spring.js'
 import { Avatar } from '../../components/avatar.js'
-// import { Virtual } from '../../components/virtual.js'
 import { RelativeTime } from '../../components/relative-time.js'
 
 async function Message (props) {
@@ -24,7 +23,7 @@ async function Message (props) {
 Message = Register(Message)
 
 async function Messages (props) {
-  const { net, llm, isMobile } = props
+  const { net, db, llm, isMobile } = props
 
   //
   // Cache elements that we will touch frequently with the interaction/animation.
@@ -74,6 +73,8 @@ async function Messages (props) {
         if (el.closest('.message') || el.classList.contains('.message')) return
       }
 
+      this.el.classList.add('moving')
+
       if (isLinear && isSignificant) {
         isPanning = true
         elBuffer.style.overflow = 'hidden'
@@ -87,6 +88,8 @@ async function Messages (props) {
       }
     },
     end: function (event) {
+      this.el.classList.remove('moving')
+
       const interactionDuration = Date.now() - this.startTime
       const movedDistance = Math.abs(this.clientX - this.startX)
 
@@ -117,12 +120,13 @@ async function Messages (props) {
     }
   })
 
+  //
+  // Methods exposed on this element can be accessed by other elements.
+  //
   this.moveTo = spring.moveTo.bind(spring)
+
   this.updateTransform = spring.updateTransform.bind(spring)
 
-  //
-  // Add a method to create and append a message from outside the component view
-  //
   this.insertMessage = async props => {
     const m = await Message(props)
     const messagesBuffer = this.querySelector('.buffer-content')
@@ -178,15 +182,14 @@ async function Messages (props) {
     }
 
     //
-    // We could speak the generated text using the Speech API.
+    // @NOTE We could speak the generated text using the Speech API.
     //
-    /*
-      const utterance = new SpeechSynthesisUtterance(data)
-      utterance.pitch = 1
-      utterance.rate = 1
-      utterance.volume = 1
-      window.speechSynthesis.speak(utterance)
-    */
+    // const utterance = new SpeechSynthesisUtterance(data)
+    // utterance.pitch = 1
+    // utterance.rate = 1
+    // utterance.volume = 1
+    // window.speechSynthesis.speak(utterance)
+    //
 
     if (!elCurrentMessage) {
       data = data.trim() // first token should not be empty
@@ -204,9 +207,51 @@ async function Messages (props) {
     }
   })
 
+  const publishMessage = async () => {
+    const { data: dataPeer } = await db.state.get('peer')
+    const { data: dataChannel } = await db.channels.get(dataPeer.subclusterId)
+
+    const subcluster = net.subclusters.get(dataPeer.subclusterId)
+    if (!subcluster) return // shouldn't happen but let's check anyway.
+
+    const opts = {
+      previousId: dataChannel.lastPacketId // chain this to the last message
+    }
+
+    if (content === lastContent) return
+    this.lastContent = content
+
+    const message = {
+      content,
+      type: 'message',
+      nick: dataPeer.nick,
+      ts: Date.now()
+    }
+
+    //
+    // @NOTE
+    //
+    // Emitting messages directly to the subcluster will be
+    // distributed, fanned-out to k random peers, prioritizing on
+    // the subcluster members. This is eventually consistent data.
+    //
+    // We will sync with other peers when we connect but with a
+    // chat app we want to send messages to anyone else who we
+    // are directly connected to.
+    //
+    await subcluster.emit('message', message, opts)
+  }
+
   const onSendPress = async () => {
     const elInputMessage = document.getElementById('input-message')
     const data = elInputMessage.innerText.trim()
+
+    //
+    // 1. Save the user's message to the database for this channel.
+    // 2. If necessary, talk to the LLM. But don't broadcast it.
+    // 3. Write it to the network with the current subcluster info.
+    // 4. Reset the input
+    //
 
     if (!data.length) return
     elCurrentMessage = await Message({ body: data, mine: true, nick: 'me', timestamp: Date.now() })
@@ -217,9 +262,10 @@ async function Messages (props) {
     //
     // tell the LLM to stfu
     //
-    if (/^stop$/.test(data.trim())) {
+    if (/^@ai stop$/.test(data.trim())) {
       llm.stop()
       elInputMessage.textContent = ''
+      setPlaceholderText()
       return
     }
 
@@ -229,55 +275,46 @@ async function Messages (props) {
       llm.chat(data)
     }
 
+    publishMessage()
+
     //
     // TODO(@heapwolf): broadcast the message to the subcluster
     //
     elInputMessage.textContent = ''
+    setPlaceholderText()
   }
 
-  //
-  // Handle paste elegantly (stripping formatting, but preserving whitespace)
-  //
-  function paste (e) {
-    e.preventDefault()
+  const setPlaceholderText = () => {
+    const elInputMessage = this.querySelector('#input-message')
+    const elPlaceholder = this.querySelector('.placeholder-text')
 
-    const clipboardData = e.clipboardData || window.clipboardData
-    let text = clipboardData.getData('Text')
-
-    const sanitizedHTML = text
-      .replace(/ /g, '&nbsp;') // Preserve spaces
-      .replace(/\n/g, '<br>'); // Preserve newlines
-
-    const selection = window.getSelection()
-    if (!selection.rangeCount) return false
-    
-    const range = selection.getRangeAt(0)
-    range.deleteContents()
-
-    const fragment = document.createDocumentFragment()
-    const div = document.createElement('div')
-    div.innerHTML = sanitizedHTML
-
-    while (div.firstChild) {
-      fragment.appendChild(div.firstChild)
+    if (elInputMessage.textContent.trim()) {
+      elPlaceholder.classList.add('hide')
+      elPlaceholder.classList.remove('show')
+    } else {
+      elPlaceholder.classList.add('show')
+      elPlaceholder.classList.remove('hide')
     }
-
-    range.insertNode(fragment)
-    range.collapse(false)
   }
 
   //
   // On desktop, enter should send, but shift-enter should create a new line.
   //
-  function keydown (e) {
+  const keydown = (e) => {
     if (isMobile) return // only the button should send on mobile
     if (e.key === 'Enter' && !e.shiftKey) onSendPress()
   }
 
-  function click (e) {
+  const click = (e) => {
     onSendPress()
   }
 
+  const keyup = (e) => {
+    setPlaceholderText()
+  }
+
+  const { data: dataPeer } = await db.state.get('peer')
+  const { data: dataChannel } = await db.channels.get(dataPeer.subclusterId)
   //
   // Passing a function to the render tree will be observed for that element.
   // The deeper the event is placed in the tree, the more specific it will be
@@ -285,7 +322,7 @@ async function Messages (props) {
   //
   return [
     header({ class: 'primary draggable' },
-      span({ class: 'title' }, '#general')
+      span({ class: 'title' }, '#', dataChannel.label)
     ),
     div({ class: 'content' },
 
@@ -302,8 +339,9 @@ async function Messages (props) {
       // The input area
       //
       div({ id: 'input' },
+        span({ class: 'placeholder-text show' }, 'Enter your message...'),
 
-        div({ id: 'input-message', contenteditable: 'true', keydown, paste }),
+        div({ id: 'input-message', contenteditable: 'plaintext-only', keydown, keyup }),
 
         button({ id: 'send-message', click },
           svg({ class: 'app-icon' },
