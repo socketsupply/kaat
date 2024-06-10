@@ -38,8 +38,8 @@ modal .dialog {
   background: var(--x-window);
   border: none;
   border-radius: 12px;
-  min-height: 30vh;
-  min-width: 40vw;
+  min-height: 40vh;
+  min-width: 50vw;
   box-shadow: 0 2px 10px var(--x-modal-overlay);
   opacity: 0;
   pointer-events: none;
@@ -61,6 +61,7 @@ modal .dialog > header {
 
 modal .dialog > main {
   padding: 0 20px;
+  padding-bottom: 20px;
 }
 
 modal .dialog > footer {

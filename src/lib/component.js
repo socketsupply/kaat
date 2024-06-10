@@ -14,12 +14,20 @@
  * Usage:
  *
  * ```js
- * async function Counter (props, ...children) {
- *   this.on('connected', e => {
- *     // ...this component is ready
- *   })
+ * async function CounterA (props, ...children) {
+ *   this.state.count ??= 0
  *
- *   await sleep(200) // do something async if you want
+ *   const onclick = () => {
+ *     this.state.count++
+ *   }
+ *
+ *   return div(`count=${this.state.count}`, onclick)
+ * }
+ *
+ * CounterA = Register(CounterA)
+ *
+ * async function CounterB (props, ...children) {
+ *   await sleep(16) // do something async if you want
  *
  *   return (
  *     div({ style: { border: '1px solid blue' } },
@@ -28,20 +36,21 @@
  *   )
  * }
  *
- * Counter = Register(Counter) // The catch is, you need to register your components.
+ * CounterB = Register(CounterB)
  *
  * async function App () {
  *   let count = 0
  *
  *   const onclick = (event, match) => {
- *     if (!match('#foo')) return
+ *     if (!match('#b')) return
  *
- *     event.target.render({ value: String(++count) })
+ *     event.target.render({ value: String(++count) }) // you can manually render with new props
  *   }
  *
  *   return (
  *     div({ style: { border: '1px solid red', fontFamily: 'monospace', cursor: 'pointer' } },
- *       await Counter({ id: 'foo', value: '0' }),
+ *       CounterA({ id: 'a' }),
+ *       await CounterB({ id: 'b', value: '0' }),
  *       onclick,
  *     )
  *   )
@@ -144,11 +153,17 @@ export function Register (Fn) {
      */
     apply: (target, self, args) => {
       const el = createElement(hyphenate(Fn.name), ...args)
-
-      if (args[0]?.id) { // if there is an id, check the state manager
-        if (!Register.state[args[0].id]) Register.state[args[0].id] = {}
-        el.state = Register.state[args[0].id]
-      }
+      const id = args[0]?.id || el.id || Fn.name
+      if (!Register.state[id]) Register.state[id] = {}
+      el.state = new Proxy(Register.state[id], { // re-render when state is updated.
+        set (target, property, value) {
+          let isUpdate = false
+          if (property in target) isUpdate = true
+          target[property] = value
+          if (isUpdate) el.render()
+          return true
+        }
+      })
 
       el.on = (s, fn) => {
         const listener = e => fn.apply(el, [e, match(e.target)])

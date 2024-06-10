@@ -81,7 +81,7 @@ function Text (props, ...children) {
   return (
     div({ class: 'wrapper', style: styleWrapper },
       props.label && label(props.label),
-      props.icon && button({ class: 'icon', data: { event: props.icon } },
+      props.icon && button({ class: 'icon' },
         svg({ class: 'app-icon' },
           use({ 'xlink:href': `#${props.icon}` })
         )

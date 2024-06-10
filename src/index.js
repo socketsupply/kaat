@@ -97,12 +97,6 @@ async function App () {
   const onclick = async (event, match) => {
     const el = match('[data-event]')
 
-    if (el?.dataset.event === 'change-model') {
-      const [fileHandle] = await window.showOpenFilePicker(pickerOpts)
-
-      console.log('SWAP THE MODEL', fileHandle)
-    }
-
     if (el?.dataset.event === 'sidebar-toggle') {
       const messages = document.getElementById('messages')
 
@@ -121,19 +115,6 @@ async function App () {
   // Things we want to share with other components.
   //
   const context = { db, net, isMobile }
-
-  const pickerOpts = {
-    types: [
-      {
-        description: 'Select A Model File',
-        accept: {
-          '*/*': ['.gguf']
-        }
-      }
-    ],
-    excludeAcceptAllOption: true,
-    multiple: false
-  }
 
   //
   // Render the main screen.

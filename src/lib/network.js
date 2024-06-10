@@ -67,8 +67,18 @@ const network = async db => {
   // This might happen more frequently than we want to write to the database so we
   // should debounce it.
   //
+  let debouncer = null
   socket.on('#state', async info => {
-    // console.log('???', info)
+    clearTimeout(debouncer)
+
+    debouncer = setTimeout(async () => {
+      const { err, data } = await db.state.get('peer')
+      if (err) {
+        console.error(err)
+        return
+      }
+      await db.state.put('peer', { ...data, ...info })
+    }, 512)
   })
 
   // socket.on('#debug', (...args) => console.log('DEBUG', ...args))

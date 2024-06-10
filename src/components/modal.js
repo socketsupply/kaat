@@ -87,6 +87,7 @@ function Modal (props, ...children) {
     // Add event listener for Escape key
     escapeListener = (event) => {
       if (event.key === 'Escape') {
+        event.preventDefault()
         close()
       }
     }

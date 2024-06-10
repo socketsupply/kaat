@@ -157,12 +157,6 @@ async function Profile (props) {
           icon: 'copy-icon',
           data: { event: 'settings-public-key' },
           value: encodedPublicKey
-        }),
-        Text({
-          label: 'Path To Agent Model',
-          value: 'model.gguf',
-          data: { event: 'change-model' },
-          icon: 'config-icon',
         })
       ),
       PeerInfo({ id: 'peer-info' })

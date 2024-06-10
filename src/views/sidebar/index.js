@@ -10,8 +10,6 @@ async function Channels (props) {
 
   const { data: dataPeer } = await db.state.get('peer')
 
-  this.state = {}
-
   //
   // When a channel is clicked, activate or manage it.
   //
@@ -123,6 +121,19 @@ async function Sidebar (props) {
   const vProfileTransformOrigin = isMobile ? 100 : 80
   const vProfileTransformMag = isMobile ? 0.5 : 0.08
 
+  const pickerOpts = {
+    types: [
+      {
+        description: 'Select A Model File',
+        accept: {
+          '*/*': ['.gguf']
+        }
+      }
+    ],
+    excludeAcceptAllOption: true,
+    multiple: false
+  }
+
   const onclick = async (event, match) => {
     const el = match('[data-event]')
 
@@ -137,6 +148,13 @@ async function Sidebar (props) {
       //
       // TODO create a channel
       //
+    }
+
+    if (el?.dataset.event === 'change-model') {
+      event.stopPropagation()
+
+      const [fileHandle] = await window.showOpenFilePicker(pickerOpts)
+      console.log('SWAP THE MODEL', fileHandle)
     }
 
     if (el?.dataset.event === 'copy-icon') {
@@ -174,21 +192,36 @@ async function Sidebar (props) {
         id: 'create-channel',
         header: 'Create Channel',
         style: { width: '420px' },
-        buttons: [{ value: 'ok', label: 'OK' }]
+        buttons: [{ value: 'ok', label: 'OK' }],
+        onclick
       },
       div({ class: 'grid' },
         Text({
           errorMessage: 'Nope',
           label: 'Channel Name',
           pattern: '[a-zA-Z0-9 ]+',
+          data: { key: 'secret-key' },
           placeholder: 'Space Camp'
         }),
         Text({
           errorMessage: 'Nope',
-          label: 'Secret Key',
+          label: 'Access Token',
           type: 'password',
           icon: 'copy-icon',
-          placeholder: 'Channel Key'
+          data: { key: 'access-token' },
+          placeholder: 'c52d1bf7-1875-4d2f-beee-bbfe46f11174'
+        }),
+        Text({
+          label: 'Path To Agent Model',
+          value: 'model.gguf',
+          readonly: true,
+          data: { key: 'model-path' },
+          icon: 'config-icon',
+        }),
+        Text({
+          label: 'Initial Prompt',
+          placeholder: 'You are a coding assistant focused on Web Development.',
+          data: { key: 'model-prompt' },
         })
       )
     ),
@@ -201,7 +234,8 @@ async function Sidebar (props) {
         buttons: [
           { value: 'ok', label: 'OK' },
           { value: 'delete', label: 'Delete' }
-        ]
+        ],
+        onclick
       },
       div({ class: 'grid' },
         Text({
@@ -218,6 +252,18 @@ async function Sidebar (props) {
           type: 'password',
           icon: 'copy-icon',
           placeholder: 'Channel Key'
+        }),
+        Text({
+          label: 'Path To Agent Model',
+          value: 'model.gguf',
+          readonly: true,
+          data: { event: 'change-model' },
+          icon: 'config-icon',
+        }),
+        Text({
+          label: 'Initial Prompt',
+          value: 'You are a coding assistant focused on Web Development.',
+          data: { event: 'change-model-prompt' },
         })
       )
     )
