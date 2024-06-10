@@ -1,6 +1,5 @@
 import process from 'socket:process'
 import application from 'socket:application'
-import { LLM } from 'socket:ai'
 
 import { network } from './lib/network.js'
 import { database } from './lib/data.js'
@@ -21,14 +20,6 @@ async function App () {
 
   document.body.setAttribute('hardware', isMobile ? 'mobile' : 'desktop')
   document.body.setAttribute('platform', process.platform)
-
-  //
-  // Create an LLM that can partcipate in the chat.
-  //
-  const llm = new LLM({
-    path: `model.gguf`,
-    prompt: 'You are a coding assistant.'
-  })
 
   if (isMobile && process.platform === 'ios') {
     //
@@ -103,10 +94,16 @@ async function App () {
   //
   // Pretty much a global click handler for anything in the app.
   //
-  async function click (event, match) {
-    const el = match('#sidebar-toggle')
+  const onclick = async (event, match) => {
+    const el = match('[data-event]')
 
-    if (el) {
+    if (el?.dataset.event === 'change-model') {
+      const [fileHandle] = await window.showOpenFilePicker(pickerOpts)
+
+      console.log('SWAP THE MODEL', fileHandle)
+    }
+
+    if (el?.dataset.event === 'sidebar-toggle') {
       const messages = document.getElementById('messages')
 
       if (el.getAttribute('open') === 'true') {
@@ -123,17 +120,30 @@ async function App () {
   //
   // Things we want to share with other components.
   //
-  const context = { db, net, llm, isMobile }
+  const context = { db, net, isMobile }
+
+  const pickerOpts = {
+    types: [
+      {
+        description: 'Select A Model File',
+        accept: {
+          '*/*': ['.gguf']
+        }
+      }
+    ],
+    excludeAcceptAllOption: true,
+    multiple: false
+  }
 
   //
   // Render the main screen.
   //
   return [
-    aside({ id: 'secondary', click },
+    aside({ id: 'secondary', onclick },
       await Profile({ id: 'profile', class: 'view', ...context })
     ),
-    main({ id: 'main', click },
-      button({ id: 'sidebar-toggle' },
+    main({ id: 'main', onclick },
+      button({ id: 'sidebar-toggle', data: { event: 'sidebar-toggle' } },
         svg({ class: 'app-icon rectangular' },
           use({ 'xlink:href': '#sidebar-icon' })
         )

@@ -13,10 +13,12 @@
   box-shadow: 0px 0px 24px -10px rgba(0, 0, 0, 1);
   z-index: 2;
 
+  .moving {
+  }
+
   avatar {
     display: grid;
     position: relative;
-    top: 20px;
 
     .icon {
       height: 34px;
@@ -60,7 +62,7 @@
     color: var(--x-info);
     pointer-events: none;
     transform: translateX(0%);
-    transition: transform .3s ease, z-index .3s ease, opacity .3s ease;
+    transition: transform .2s ease, z-index .3s ease, opacity .3s ease;
 
     &.hide {
       opacity: 0;
@@ -79,7 +81,7 @@
     margin: 0;
   }
 
-  .buffer-wrapper {
+  virtual-messages {
     position: relative;
   }
 
@@ -104,19 +106,16 @@
     padding: 8px 0;
   }
 
-  .message {
+  message {
     width: fit-content;
     max-width: 90%;
     word-wrap: break-word;
     white-space: break-spaces;
-    border-radius: 6px;
-    margin-top: 4px;
     line-height: 22px;
     overflow: hidden;
-    grid-area: 2 / 2;
   }
 
-  .message-wrapper {
+  message {
     display: grid;
     grid-template-columns: auto 1fr;
     margin-top: 20px;
@@ -126,24 +125,25 @@
       display: grid;
       grid-template-columns: auto 1fr;
       letter-spacing: 1px;
-      align-content: end;
-      gap: 10px;
+      align-items: center;
+      color: var(--x-info);
     }
 
     &.mine {
-      .message {
-        /* background: var(--x-border); *
-        /* border-bottom-right-radius: 0; */
-      }
+      /* background: var(--x-border); *
+      /* border-bottom-right-radius: 0; */
     }
 
     &:not(.mine) {
-      .message {
-        /* margin-right: 10%; */
-        /* border-bottom-left-radius: 0; */
-      }
+      /* margin-right: 10%; */
+      /* border-bottom-left-radius: 0; */
     }
   }
+}
+
+body.moving * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
 }
 
 /**
@@ -154,7 +154,7 @@ body[hardware="desktop"] {
 
     /* Allow messages to be selected on desktop. */
     /* On mobile, show a copy button */
-    .message {
+    message .content {
       user-select: initial;
       -webkit-user-select: initial;
     }

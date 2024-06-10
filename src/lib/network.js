@@ -40,6 +40,8 @@ const network = async db => {
       const derivedKeys = await Encryption.createKeyPair(sharedKey)
       const subclusterId = Buffer.from(derivedKeys.publicKey).toString('base64')
 
+      if (!dataPeer.subclusterId) dataPeer.subclusterId = subclusterId
+
       channel.subclusterId = subclusterId 
       channel.sharedKey = sharedKey
       subclusters[channel.subclusterId] = subcluster
@@ -59,6 +61,19 @@ const network = async db => {
       subclusters[channel.subclusterId] = await socket.subcluster({ sharedKey: channel.sharedKey })
     }
   }
+
+  //
+  // The socket will advise us when it's a good time to save the state of the peer.
+  // This might happen more frequently than we want to write to the database so we
+  // should debounce it.
+  //
+  socket.on('#state', async info => {
+    // console.log('???', info)
+  })
+
+  // socket.on('#debug', (...args) => console.log('DEBUG', ...args))
+  // socket.on('#packet', (...args) => console.log('PACKET', ...args))
+  // socket.on('#send', (...args) => console.log('SEND', ...args))
 
   return {
     socket,

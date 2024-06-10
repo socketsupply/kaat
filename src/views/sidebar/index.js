@@ -10,10 +10,12 @@ async function Channels (props) {
 
   const { data: dataPeer } = await db.state.get('peer')
 
+  this.state = {}
+
   //
   // When a channel is clicked, activate or manage it.
   //
-  const click = async (event, match) => {
+  const onclick = async (event, match) => {
     const el = match('[data-event]')
     if (!el) return
 
@@ -57,7 +59,28 @@ async function Channels (props) {
         const elMessagesHeader = document.querySelector('#messages header .title')
         elMessagesHeader.textContent = `#${channel.label}`
 
-        // render the Messages buffer
+        // get the current node
+        const attachedNode = document.querySelector('virtual-messages')
+
+        if (attachedNode) {
+          // retain the node
+          if (!this.state[attachedNode.dataset.id]) {
+            this.state[attachedNode.dataset.id] = attachedNode
+          }
+        }
+
+        // get the detatched node and reattach it
+        const detatchedNode = this.state[dataPeer.subclusterId]
+
+        if (detatchedNode) {
+          // swap the detatched node with the currently attached one
+          attachedNode.parentElement.replaceChild(detatchedNode, attachedNode)
+        } else {
+          // there is no node to swap, so create a new one by calling render.
+          // this will set up all the events and everything for the new channel.
+          const messagesRoot = document.querySelector('#messages')
+          messagesRoot.render()
+        }
       }
     }
   }
@@ -72,7 +95,7 @@ async function Channels (props) {
             value: channel.subclusterId,
             active: channel.subclusterId === dataPeer?.subclusterId
           },
-          click
+          onclick
         },
         span({ class: 'label' },
           span('#', { class: 'channel-symbol' }), channel.label
@@ -100,13 +123,15 @@ async function Sidebar (props) {
   const vProfileTransformOrigin = isMobile ? 100 : 80
   const vProfileTransformMag = isMobile ? 0.5 : 0.08
 
-  const click = async (event, match) => {
-    if (match('#profile-open')) {
+  const onclick = async (event, match) => {
+    const el = match('[data-event]')
+
+    if (el?.dataset.event === 'profile-open') {
       const elProfile = document.getElementById('profile')
       elProfile.moveTo(vProfilePositionTop)
     }
 
-    if (match('#create-channel-open')) {
+    if (el?.dataset.event === 'create-channel-open') {
       const elDialog = document.getElementById('create-channel')
       const res = await elDialog.open()
       //
@@ -114,7 +139,7 @@ async function Sidebar (props) {
       //
     }
 
-    if (match('[data-event="copy-icon"]')) {
+    if (el?.dataset.event === 'copy-icon') {
       e.preventDefault()
 
       const el = match('[data-event="copy-icon"]')
@@ -126,14 +151,14 @@ async function Sidebar (props) {
   const { data: dataChannels } = await db.channels.readAll()
 
   return [
-    header({ class: 'primary draggable', click },
+    header({ class: 'primary draggable', onclick },
       div({ class: 'content' },
-        button({ id: 'create-channel-open' },
+        button({ id: 'create-channel-open', data: { event: 'create-channel-open' } },
           svg({ class: 'app-icon' },
             use({ 'xlink:href': '#plus-icon' })
           )
         ),
-        button({ id: 'profile-open' },
+        button({ id: 'profile-open', data: { event: 'profile-open' } },
           svg({ class: 'app-icon' },
             use({ 'xlink:href': '#profile-icon' })
           )

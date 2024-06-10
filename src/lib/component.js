@@ -33,7 +33,7 @@
  * async function App () {
  *   let count = 0
  *
- *   const click = (event, match) => {
+ *   const onclick = (event, match) => {
  *     if (!match('#foo')) return
  *
  *     event.target.render({ value: String(++count) })
@@ -42,7 +42,7 @@
  *   return (
  *     div({ style: { border: '1px solid red', fontFamily: 'monospace', cursor: 'pointer' } },
  *       await Counter({ id: 'foo', value: '0' }),
- *       click,
+ *       onclick,
  *     )
  *   )
  * }
@@ -82,17 +82,22 @@ const createElement = (t, ...args) => {
       el.appendChild(document.createTextNode(c))
     } else if (c instanceof globalThis.Node) {
       el.appendChild(c)
-    } else if (typeof c === 'function') {
-      el.addEventListener(c.name, e => c(e, match(e.target)))
+    } else if (typeof c === 'function' && c.name ) {
+      const eventName = c.name.slice(2).toLowerCase()
+      el.addEventListener(eventName, e => c(e, match(e.target)))
     } else if (typeof c === 'object' && c !== null) {
       Object.entries(c).forEach(([k, v]) => {
         if (typeof v === 'function') { // allow listeners here to, why not
-          el.addEventListener(v.name, e => v(e, match(e.target)))
+          const eventName = v.name.slice(2).toLowerCase()
+          el.addEventListener(eventName, e => v(e, match(e.target)))
         } else if (k === 'style' && typeof v === 'object') {
           Object.assign(el.style, v)
         } else if (k === 'class') {
-          if (el.tagName === 'svg') el.setAttribute('class', v)
-          else el.className = v
+          if (el.tagName === 'svg') {
+            el.setAttribute('class', v)
+          } else {
+            el.className = v
+          }
         } else if (k === 'data') {
           Object.entries(v).forEach(a => el.dataset[a[0]] = a[1])
         } else if (el.tagName === 'use' || k === 'contenteditable') {

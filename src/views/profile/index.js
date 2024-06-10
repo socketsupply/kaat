@@ -126,16 +126,16 @@ async function Profile (props) {
   //
   // Handle the close button
   //
-  const click = (event, match) => {
+  const onclick = (event, match) => {
     if (match('#profile-close')) {
       spring.moveTo(window.innerHeight)
     }
   }
 
   return [
-    header({ class: 'draggable' },
+    header(
       span('Profile'),
-      button({ id: 'profile-close', click },
+      button({ id: 'profile-close', onclick },
         svg({ class: 'app-icon' },
           use({ 'xlink:href': '#close-icon' })
         )
@@ -147,6 +147,7 @@ async function Profile (props) {
           errorMessage: 'Accepts A-Z, 0-9, and "_"',
           label: 'Nickname',
           pattern: '[a-zA-Z0-9_]+',
+          data: { event: 'settings-nick' },
           placeholder: 'Ace Quxx',
           value: nick
         }),
@@ -154,7 +155,14 @@ async function Profile (props) {
           label: 'Public Key',
           readOnly: 'true',
           icon: 'copy-icon',
+          data: { event: 'settings-public-key' },
           value: encodedPublicKey
+        }),
+        Text({
+          label: 'Path To Agent Model',
+          value: 'model.gguf',
+          data: { event: 'change-model' },
+          icon: 'config-icon',
         })
       ),
       PeerInfo({ id: 'peer-info' })

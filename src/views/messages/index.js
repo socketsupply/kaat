@@ -1,29 +1,47 @@
 import process from 'socket:process'
+import path from 'socket:path'
+import { sha256 } from 'socket:network'
+import { LLM } from 'socket:ai'
 
 import { Register } from '../../lib/component.js'
 import { Spring } from '../../lib/spring.js'
 import { Avatar } from '../../components/avatar.js'
 import { RelativeTime } from '../../components/relative-time.js'
 
-async function Message (props) {
-  const messageClass = props.mine === true
-    ? 'message-wrapper mine'
-    : 'message-wrapper'
+//
+// Message and VirtualMessages render and rerender unencypted messages.
+//
+async function Message (props = {}) {
+  this.id = props.messageId
+  if (props.mine) this.classList.add('mine')
 
-  return div({ class: messageClass },
+  return [
     await Avatar(props),
-    div({ class: 'author' },
-      div({ class: 'nick' }, '@', props.nick, ' - '),
-      div({ class: 'timestamp' }, await RelativeTime(props))
-    ),
-    div({ class: 'message' }, props.body)
-  )
+    div({ class: 'message' },
+      div({ class: 'author' },
+        div({ class: 'nick' }, '@', props.nick, ' - '),
+        div({ class: 'timestamp' }, await RelativeTime(props))
+      ),
+      div({ class: 'content' }, props.content)
+    )
+  ]
 }
 
 Message = Register(Message)
 
+async function VirtualMessages (props) {
+  const messages = props.rows.filter(Boolean)
+  const rows = await Promise.all(messages.map(Message))
+
+  return div({ id: 'message-buffer' },
+    div({ class: 'buffer-content' }, rows)
+  )
+}
+
+VirtualMessages = Register(VirtualMessages)
+
 async function Messages (props) {
-  const { net, db, llm, isMobile } = props
+  const { net, db, isMobile } = props
 
   //
   // Cache elements that we will touch frequently with the interaction/animation.
@@ -33,6 +51,14 @@ async function Messages (props) {
   let elSidebarToggle
 
   let isPanning = false
+  let lastContent = null
+
+  const { data: llmConfig } = await db.state.get('llm')
+
+  //
+  // Create an LLM that can partcipate in the chat.
+  //
+  const llm = new LLM(llmConfig)
 
   //
   // Enable some fun interactions on the messages element
@@ -50,11 +76,16 @@ async function Messages (props) {
       elSidebar.style.transform = `scale(${Math.min(scale, 1)})`
       elSidebar.style.opacity = opacity
       elSidebar.style.transformOrigin = '20% 70%'
+
+      if (pos > 10) {
+        document.body.classList.add('moving')
+      } else {
+        document.body.classList.remove('moving')
+      }
     },
     begin: function (event) {
       if (!elBuffer) elBuffer = document.getElementById('message-buffer')
-
-      elBuffer.style.overflow = 'auto'
+      if (elBuffer) elBuffer.style.overflow = 'auto'
 
       if (document.body.getAttribute('keyboard') === 'true') {
         this.isInteractive = false
@@ -70,14 +101,12 @@ async function Messages (props) {
 
       if (!isMobile) {
         const el = event.target
-        if (el.closest('.message') || el.classList.contains('.message')) return
+        if (el.closest('message') || el.classList.contains('message')) return
       }
-
-      this.el.classList.add('moving')
 
       if (isLinear && isSignificant) {
         isPanning = true
-        elBuffer.style.overflow = 'hidden'
+        if (elBuffer) elBuffer.style.overflow = 'hidden'
       } else if (!isPanning) {
         return // its either an angular or trivial movement, ignore
       }
@@ -88,8 +117,6 @@ async function Messages (props) {
       }
     },
     end: function (event) {
-      this.el.classList.remove('moving')
-
       const interactionDuration = Date.now() - this.startTime
       const movedDistance = Math.abs(this.clientX - this.startX)
 
@@ -116,7 +143,7 @@ async function Messages (props) {
     },
     complete: function () {
       if (!elBuffer) elBuffer = document.getElementById('message-buffer')
-      elBuffer.style.overflow = 'auto'
+      if (elBuffer) elBuffer.style.overflow = 'auto'
     }
   })
 
@@ -127,17 +154,75 @@ async function Messages (props) {
 
   this.updateTransform = spring.updateTransform.bind(spring)
 
-  this.insertMessage = async props => {
-    const m = await Message(props)
-    const messagesBuffer = this.querySelector('.buffer-content')
-    messagesBuffer.prepend(m)
+  const prepareMessageForReading = async message => {
+    //
+    // First, look up any claims that have been made about the owner of the packet
+    // If there is a claim, we can use the nick from it to indicate if it's verified.
+    //
+    const pk = message.publicKey
+
+    const { data: dataClaim } = await db.claims.get(pk)
+    const { err, data: dataOpened } = await net.socket.open(message.message, message.subclusterId)
+
+    if (err) {
+      console.log('Unable to decrypt', message.subclusterId, message.message.length)
+      return
+    }
+
+    const props = {
+      messageId: message.messageId,
+      timestamp: Date.now()
+    }
+
+    if (err) {
+      props.content = `<Encrypted - (${err.message})>`
+      props.failed = true
+    } else {
+      try {
+        const buf = Buffer.from(dataOpened).toString()
+        const json = JSON.parse(buf)
+
+        props.content = json.content
+        props.timestamp = json.ts
+        props.nick = dataClaim?.trusted ? dataClaim.nick : json.nick
+        props.trusted = dataClaim?.trusted === true
+      } catch (err) {
+        console.error(err)
+        return
+      }
+    }
+
+    return props
+  }
+
+  this.appendMessage = async (message) => {
+    console.log('APPEND MSG', message)
+    const child = await Message(await prepareMessageForReading(message))
+    const parent = document.querySelector('virtual-messages .buffer-content')
+    parent.prepend(child)
+  }
+
+  const packetToMessage = (packet) => {
+    //
+    // Packets that we create wont be fragmented, so we dont need to
+    // think about splitting or reconciling packet fragments.
+    //
+    // Store the packet encrypted and only decrypt it when the message
+    // is actively being displayed to the screen.
+    //
+    return {
+      messageId: Buffer.from(packet.packetId).toString('hex'),
+      message: packet.message,
+      subclusterId: Buffer.from(packet.subclusterId).toString('base64'),
+      publicKey: Buffer.from(packet.usr2).toString('base64')
+    }
   }
 
   //
   // Handle messages from each network subcluster that was initialized from the database
   //
   for (const [channelId, subcluster] of Object.entries(net.subclusters)) {
-    subcluster.on('message', (value, packet) => {
+    subcluster.on('message', async (value, packet) => {
       //
       // There are a few high-level conditions that we should check before accepting data
       //
@@ -153,8 +238,14 @@ async function Messages (props) {
       // messages must have a type
       if (typeof value.type !== 'string') return
 
-      console.log(value, packet)
-      // onMessage(value, packet)
+      // let's save this one, we want it.
+      const message = packetToMessage(packet)
+      await db.messages.put([message.subclusterId, message.messageId], message)
+
+      // value is decrypted so we can adjust the UI accordingly, new message notifications etc.
+      // but ideally, all messages go through the same process to be rendered, so we actually
+      // pass the encrypted packet to the add message method on this component.
+      this.appendMessage(message)
     })
   }
 
@@ -162,13 +253,30 @@ async function Messages (props) {
   // Handle output from the LLM and input from the user.
   //
   let elCurrentMessage = null
+  let currentMessageStream = ''
 
-  llm.on('end', () => {
-    //
-    // TODO(@heapwolf): broadcast the last message generated to the network as if @ai was a real user on this device.
-    //
-    llm.stop()
+  llm.on('end', async () => {
+    const { data: dataPeer } = await db.state.get('peer')
+
+    const data = JSON.stringify({
+      content: currentMessageStream,
+      type: 'message',
+      nick: 'system',
+      ts: Date.now()
+    })
+
+    const message = {
+      messageId: (await sha256(currentMessageStream)).toString('hex'),
+      message: (await net.socket.seal(data, dataPeer.subclusterId)).data, // TODO wtf
+      subclusterId: dataPeer.subclusterId,
+      publicKey: Buffer.from(dataPeer.signingKeys.publicKey).toString('base64')
+    }
+
     elCurrentMessage = null
+    currentMessageStream = ''
+    llm.stop()
+
+    await db.messages.put([message.subclusterId, message.messageId], message)
   })
 
   llm.on('log', data => {
@@ -176,10 +284,7 @@ async function Messages (props) {
   })
 
   llm.on('data', async data => {
-    if (data === '<dummy32000>' || data === '<|user|>') {
-      llm.stop()
-      return
-    }
+    currentMessageStream += data
 
     //
     // @NOTE We could speak the generated text using the Speech API.
@@ -195,23 +300,23 @@ async function Messages (props) {
       data = data.trim() // first token should not be empty
 
       if (data) {
-        elCurrentMessage = await Message({ body: data, nick: 'system', mine: false, timestamp: Date.now() })
-        const messagesBuffer = this.querySelector('.buffer-content')
-        if (elCurrentMessage) messagesBuffer.prepend(elCurrentMessage)
+        elCurrentMessage = await Message({ content: data, nick: 'system', mine: false, timestamp: Date.now() })
+        const parent = document.querySelector('virtual-messages .buffer-content')
+        if (elCurrentMessage) parent.prepend(elCurrentMessage)
       }
     }
 
     if (elCurrentMessage) { // just update the last message
-      const elMessage = elCurrentMessage.querySelector('.message')
+      const elMessage = elCurrentMessage.querySelector('.content')
       if (elMessage) elMessage.appendChild(document.createTextNode(data))
     }
   })
 
-  const publishMessage = async () => {
+  const publish = async (content) => {
     const { data: dataPeer } = await db.state.get('peer')
     const { data: dataChannel } = await db.channels.get(dataPeer.subclusterId)
 
-    const subcluster = net.subclusters.get(dataPeer.subclusterId)
+    const subcluster = net.subclusters[dataPeer.subclusterId]
     if (!subcluster) return // shouldn't happen but let's check anyway.
 
     const opts = {
@@ -219,7 +324,7 @@ async function Messages (props) {
     }
 
     if (content === lastContent) return
-    this.lastContent = content
+    lastContent = content
 
     const message = {
       content,
@@ -231,20 +336,30 @@ async function Messages (props) {
     //
     // @NOTE
     //
-    // Emitting messages directly to the subcluster will be
-    // distributed, fanned-out to k random peers, prioritizing on
-    // the subcluster members. This is eventually consistent data.
+    // Not online? Not a problem. All messages go though the internal cache.
     //
-    // We will sync with other peers when we connect but with a
-    // chat app we want to send messages to anyone else who we
-    // are directly connected to.
+    // Emitting messages directly to the subcluster will be eventually be sent
+    // and eventually distributed, fanned-out to k random peers, prioritizing
+    // on the subcluster members.
     //
-    await subcluster.emit('message', message, opts)
+    const { err, data } = await subcluster.emit('message', message, opts)
+
+    if (err) {
+      // TODO(@heapwolf): Decide how to print this to the UI
+      console.error(err)
+      return
+    }
+
+    for (const packet of data) {
+      const message = packetToMessage(packet)
+      await db.messages.put([message.subclusterId, message.messageId], message)
+      this.appendMessage(message)
+    }
   }
 
   const onSendPress = async () => {
     const elInputMessage = document.getElementById('input-message')
-    const data = elInputMessage.innerText.trim()
+    let data = elInputMessage.innerText.trim()
 
     //
     // 1. Save the user's message to the database for this channel.
@@ -254,34 +369,39 @@ async function Messages (props) {
     //
 
     if (!data.length) return
-    elCurrentMessage = await Message({ body: data, mine: true, nick: 'me', timestamp: Date.now() })
+    // elCurrentMessage = await Message({ content: data, mine: true, nick: 'me', timestamp: Date.now() })
 
-    const messagesBuffer = this.querySelector('.buffer-content')
-    if (elCurrentMessage) messagesBuffer.prepend(elCurrentMessage)
+    // const messagesBuffer = document.querySelector('virtual-messages .buffer-content')
+    // if (elCurrentMessage) messagesBuffer.prepend(elCurrentMessage)
 
     //
     // tell the LLM to stfu
     //
-    if (/^@ai stop$/.test(data.trim())) {
+    if (/^@ai stop$/.test(data)) {
       llm.stop()
-      elInputMessage.textContent = ''
+      console.log('STOPPING')
+      elInputMessage.innerHTML = ''
       setPlaceholderText()
       return
     }
 
     // only chat to @ai when it's mentioned.
-    if (/^@ai /.test(data.trim())) {
+    if (/^@ai /.test(data)) {
       elCurrentMessage = null // invalidate the current message
+      data = data.replace(/^@ai\s+/, '')
       llm.chat(data)
     }
-
-    publishMessage()
 
     //
     // TODO(@heapwolf): broadcast the message to the subcluster
     //
-    elInputMessage.textContent = ''
+    elInputMessage.innerHTML = ''
     setPlaceholderText()
+
+    //
+    // Try to send it!
+    //
+    publish(data)
   }
 
   const setPlaceholderText = () => {
@@ -300,21 +420,47 @@ async function Messages (props) {
   //
   // On desktop, enter should send, but shift-enter should create a new line.
   //
-  const keydown = (e) => {
+  const onkeydown = (e) => {
     if (isMobile) return // only the button should send on mobile
     if (e.key === 'Enter' && !e.shiftKey) onSendPress()
   }
 
-  const click = (e) => {
+  const onclick = (e) => {
     onSendPress()
   }
 
-  const keyup = (e) => {
+  const onkeyup = (e) => {
     setPlaceholderText()
   }
 
   const { data: dataPeer } = await db.state.get('peer')
   const { data: dataChannel } = await db.channels.get(dataPeer.subclusterId)
+
+  //
+  // The fist time this component renders we can get the data for the current
+  // channel from the datatabase and pass that to the virtual list component.
+  //
+  const query = {
+    gte: [dataPeer.subclusterId],
+    lte: [dataPeer.subclusterId, ['\xFF']]
+    // reverse: true 
+  }
+
+  const { data: dataMessages } = await db.messages.readAll(query)
+
+  //
+  // Unencrypt the messages
+  //
+  let rows = []
+
+  if (dataMessages) {
+    const messages = [...dataMessages.values()].map(message => {
+      return prepareMessageForReading(message)
+    })
+
+    rows = await Promise.all(messages)
+  }
+
   //
   // Passing a function to the render tree will be observed for that element.
   // The deeper the event is placed in the tree, the more specific it will be
@@ -324,16 +470,12 @@ async function Messages (props) {
     header({ class: 'primary draggable' },
       span({ class: 'title' }, '#', dataChannel.label)
     ),
-    div({ class: 'content' },
 
+    div({ class: 'content' },
       //
-      // The messages area
+      // The thing that actually handles rendering the messages
       //
-      div({ class: 'buffer-wrapper' },
-        div({ id: 'message-buffer' },
-          div({ class: 'buffer-content' })
-        )
-      ),
+      await VirtualMessages({ data: { id: dataPeer.subclusterId }, rows }),
 
       //
       // The input area
@@ -341,9 +483,9 @@ async function Messages (props) {
       div({ id: 'input' },
         span({ class: 'placeholder-text show' }, 'Enter your message...'),
 
-        div({ id: 'input-message', contenteditable: 'plaintext-only', keydown, keyup }),
+        div({ id: 'input-message', contenteditable: 'plaintext-only', onkeydown, onkeyup }),
 
-        button({ id: 'send-message', click },
+        button({ id: 'send-message', onclick },
           svg({ class: 'app-icon' },
             use({ 'xlink:href': '#send-icon' })
           )
