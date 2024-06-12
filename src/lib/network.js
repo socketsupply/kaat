@@ -6,6 +6,21 @@ const network = async db => {
   let socket
   let subclusters = {}
 
+  const createChannel = async (channel) => {
+    const sharedKey = await Encryption.createSharedKey(channel.accessToken)
+    const subcluster = await socket.subcluster({ sharedKey })
+    const derivedKeys = await Encryption.createKeyPair(sharedKey)
+    const subclusterId = Buffer.from(derivedKeys.publicKey).toString('base64')
+
+    if (!dataPeer.subclusterId) dataPeer.subclusterId = subclusterId
+
+    channel.subclusterId = subclusterId
+    channel.sharedKey = sharedKey
+    subclusters[channel.subclusterId] = subcluster
+
+    await db.channels.put(channel.subclusterId, channel)
+  }
+
   //
   // If there's not data in the peer, we can assume that we dont have any data at all.
   // At this point, we need to create some data and save it to the database.
@@ -25,28 +40,17 @@ const network = async db => {
     //
     let channels = [
       {
-        key: crypto.randomUUID(),
+        accessToken: crypto.randomUUID(),
         label: 'work'
       },
       {
-        key: crypto.randomUUID(),
+        accessToken: crypto.randomUUID(),
         label: 'fun'
       }
     ]
 
     for (const channel of channels) {
-      const sharedKey = await Encryption.createSharedKey(channel.key)
-      const subcluster = await socket.subcluster({ sharedKey })
-      const derivedKeys = await Encryption.createKeyPair(sharedKey)
-      const subclusterId = Buffer.from(derivedKeys.publicKey).toString('base64')
-
-      if (!dataPeer.subclusterId) dataPeer.subclusterId = subclusterId
-
-      channel.subclusterId = subclusterId 
-      channel.sharedKey = sharedKey
-      subclusters[channel.subclusterId] = subcluster
-
-      await db.channels.put(channel.subclusterId, channel)
+      await createChannel(channel)
     }
 
     await db.state.put('peer', dataPeer)
@@ -72,22 +76,37 @@ const network = async db => {
     clearTimeout(debouncer)
 
     debouncer = setTimeout(async () => {
-      const { err, data } = await db.state.get('peer')
-      if (err) {
-        console.error(err)
+      const { err: errGet, data } = await db.state.get('peer')
+
+      if (errGet) {
+        console.error(errGet)
         return
       }
-      await db.state.put('peer', { ...data, ...info })
+
+      const { err: errPut } = await db.state.put('peer', { ...data, ...info })
+
+      if (errPut) {
+        console.error(errPut)
+      }
     }, 512)
   })
 
-  // socket.on('#debug', (...args) => console.log('DEBUG', ...args))
+  //
+  // Logging! Just tweak to filter logs, ie globalThis.DEBUG = '*'
+  //
+  socket.on('#debug', (pid, ...args) => {
+    if (new RegExp(globalThis.DEBUG).test(output)) {
+      console.log(pid.slice(0, 6), ...args)
+    }
+  })
+
   // socket.on('#packet', (...args) => console.log('PACKET', ...args))
   // socket.on('#send', (...args) => console.log('SEND', ...args))
 
   return {
     socket,
-    subclusters
+    subclusters,
+    createChannel
   }
 }
 

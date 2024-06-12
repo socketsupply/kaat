@@ -7,6 +7,13 @@ function Text (props, ...children) {
     borderRadius: `${props.radius || 6}px`
   }
 
+  //
+  // props have already been applied, so at this point,
+  // we can trim anything we don't wan't to forward to
+  // other inner elements that consume props.
+  //
+  delete props.data.slot
+
   const el = input({ ...props, style: styleInput })
 
   Object.defineProperty(this, 'value', {

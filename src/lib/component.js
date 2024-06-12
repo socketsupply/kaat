@@ -3,18 +3,18 @@
  * A simple React-like component system using plain JavaScript.
  *
  * Notes:
- *   - JSX-like syntax but no DSL, plain old JS.
- *   - async/await "just works", no weird use functions.
- *   - Empty root is weird, allow components to return arrays.
- *   - Anything returned is appended to the root.
- *   - No esscape opportunities from big template literals.
- *   - No subtle errors from malformed HTML
+ *   - Absolutely no build step required
+ *   - No DSLs. JSX-like syntax, but 100% JavaScript semantics
+ *   - The same lifecycle events as web components
+ *   - Components can be async/await, even async generators
+ *   - Components return arrays or trees of dom nodes
+ *   - Props are a zero cost abstraction
  *   - Insde the component, 'this' is the dom element.
  *
  * Usage:
  *
  * ```js
- * async function CounterA (props, ...children) {
+ * function CounterA (props, ...children) {
  *   this.state.count ??= 0
  *
  *   const onclick = () => {

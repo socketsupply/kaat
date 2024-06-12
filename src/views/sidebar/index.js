@@ -5,6 +5,7 @@ import { Register } from '../../lib/component.js'
 async function Channels (props) {
   const {
     data,
+    net,
     db
   } = props
 
@@ -19,17 +20,13 @@ async function Channels (props) {
 
     switch (el.dataset.event) {
       case 'manage-channel': {
-
         const channel = data.find(ch => ch.subclusterId === el.dataset.value)
         if (!channel) return
 
         const elDialog = document.getElementById('manage-channel')
 
         elDialog.render({
-          slots: {
-            channelName: channel.label,
-            key: channel.key
-          }
+          slots: elDialog.value
         })
 
         const res = await elDialog.open()
@@ -114,6 +111,7 @@ Channels = Register(Channels)
 async function Sidebar (props) {
   const {
     isMobile,
+    net,
     db
   } = props
 
@@ -143,17 +141,25 @@ async function Sidebar (props) {
     }
 
     if (el?.dataset.event === 'create-channel-open') {
-      const elDialog = document.getElementById('create-channel')
-      const res = await elDialog.open()
-      //
-      // TODO create a channel
-      //
+      event.stopPropagation()
+
+      const elModal = document.getElementById('create-channel')
+
+      const res = await elModal.open()
+
+      if (res === 'ok') {
+        await net.createChannel(elModal.value)
+      }
+
+      this.render()
+      return
     }
 
     if (el?.dataset.event === 'change-model') {
       event.stopPropagation()
 
       const [fileHandle] = await window.showOpenFilePicker(pickerOpts)
+      el.value = fileHandle.name
       console.log('SWAP THE MODEL', fileHandle)
     }
 
@@ -200,7 +206,7 @@ async function Sidebar (props) {
           errorMessage: 'Nope',
           label: 'Channel Name',
           pattern: '[a-zA-Z0-9 ]+',
-          data: { key: 'secret-key' },
+          data: { slot: 'label' },
           placeholder: 'Space Camp'
         }),
         Text({
@@ -208,20 +214,20 @@ async function Sidebar (props) {
           label: 'Access Token',
           type: 'password',
           icon: 'copy-icon',
-          data: { key: 'access-token' },
+          data: { slot: 'accessToken' },
           placeholder: 'c52d1bf7-1875-4d2f-beee-bbfe46f11174'
         }),
         Text({
           label: 'Path To Agent Model',
           value: 'model.gguf',
           readonly: true,
-          data: { key: 'model-path' },
+          data: { slot: 'modelPath' },
           icon: 'config-icon',
         }),
         Text({
           label: 'Initial Prompt',
           placeholder: 'You are a coding assistant focused on Web Development.',
-          data: { key: 'model-prompt' },
+          data: { slot: 'modelPrompt' },
         })
       )
     ),
@@ -248,7 +254,7 @@ async function Sidebar (props) {
         Text({
           errorMessage: 'Nope',
           label: 'Secret Key',
-          data: { slot: 'key' },
+          data: { slot: 'accessToken' },
           type: 'password',
           icon: 'copy-icon',
           placeholder: 'Channel Key'
@@ -257,13 +263,13 @@ async function Sidebar (props) {
           label: 'Path To Agent Model',
           value: 'model.gguf',
           readonly: true,
-          data: { event: 'change-model' },
+          data: { event: 'change-model', slot: 'pathToModel' },
           icon: 'config-icon',
         }),
         Text({
           label: 'Initial Prompt',
           value: 'You are a coding assistant focused on Web Development.',
-          data: { event: 'change-model-prompt' },
+          data: { event: 'change-model-prompt', slot: 'prompt' },
         })
       )
     )

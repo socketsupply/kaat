@@ -196,7 +196,6 @@ async function Messages (props) {
   }
 
   this.appendMessage = async (message) => {
-    console.log('APPEND MSG', message)
     const child = await Message(await prepareMessageForReading(message))
     const parent = document.querySelector('virtual-messages .buffer-content')
     parent.prepend(child)

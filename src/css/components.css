@@ -241,3 +241,8 @@ button[type="icon"] {
   height: 32px;
 }
 
+button[data-value="delete"] {
+  background-color: var(--x-danger) !important;
+  color: wheat !important;
+}
+
