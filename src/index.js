@@ -89,6 +89,19 @@ async function App () {
   //
   const net = await network(db)
 
+  const pickerOpts = {
+    types: [
+      {
+        description: 'Select A Model File',
+        accept: {
+          '*/*': ['.gguf']
+        }
+      }
+    ],
+    excludeAcceptAllOption: true,
+    multiple: false
+  }
+
   //
   // Pretty much a global click handler for anything in the app.
   //
@@ -106,6 +119,47 @@ async function App () {
         messages.moveTo(280)
         el.setAttribute('open', 'true')
       }
+    }
+
+    if (el?.dataset.event === 'profile-open') {
+      const elProfile = document.getElementById('profile')
+      elProfile.moveTo(vProfilePositionTop)
+    }
+
+    if (el?.dataset.event === 'create-channel-open') {
+      event.stopPropagation()
+
+      const elModal = document.getElementById('create-channel')
+
+      elModal.value = { 'accessToken': crypto.randomUUID() }
+
+      const res = await elModal.open()
+
+      if (res === 'ok') {
+        await net.createChannel(elModal.value)
+      }
+
+      this.render()
+      return
+    }
+
+    if (el?.dataset.event === 'delete-channel') {
+      console.log(el.dataset.value)
+    }
+
+    if (el?.dataset.event === 'change-model') {
+      event.stopPropagation()
+
+      const [fileHandle] = await window.showOpenFilePicker(pickerOpts)
+      el.value = fileHandle.name
+    }
+
+    if (el?.dataset.event === 'copy-icon') {
+      e.preventDefault()
+
+      const el = match('[data-event="copy-icon"]')
+      const text = el.closest('text')
+      await navigator.clipboard.writeText(text.value)
     }
   }
 

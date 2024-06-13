@@ -8,6 +8,16 @@ function Modal (props, ...children) {
 
   let escapeListener
 
+  //
+  // Reparenting the component allows us to declare it
+  // where ever we want but then ensure its global.
+  //
+  this.on('connected', event => {
+    console.log('CONNECTED')
+    const el = this.parentNode.removeChild(this)
+    document.body.appendChild(el)
+  })
+
   Object.defineProperty(this, 'value', {
     get: () => {
       const nodes = [...this.querySelectorAll('[data-slot]')]
