@@ -53,13 +53,6 @@ async function Messages (props) {
   let isPanning = false
   let lastContent = null
 
-  const { data: llmConfig } = await db.state.get('llm')
-
-  //
-  // Create an LLM that can partcipate in the chat.
-  //
-  const llm = new LLM(llmConfig)
-
   //
   // Enable some fun interactions on the messages element
   //
@@ -211,8 +204,8 @@ async function Messages (props) {
     //
     return {
       messageId: Buffer.from(packet.packetId).toString('hex'),
-      message: packet.message,
       subclusterId: Buffer.from(packet.subclusterId).toString('base64'),
+      message: packet.message,
       publicKey: Buffer.from(packet.usr2).toString('base64')
     }
   }
@@ -222,6 +215,11 @@ async function Messages (props) {
   //
   for (const [channelId, subcluster] of Object.entries(net.subclusters)) {
     subcluster.on('message', async (value, packet) => {
+      if (!db[channelId]) {
+        console.warn('message arrived without channel in db')
+        return
+      }
+
       //
       // There are a few high-level conditions that we should check before accepting data
       //
@@ -239,11 +237,10 @@ async function Messages (props) {
 
       // let's save this one, we want it.
       const message = packetToMessage(packet)
-      await db.messages.put([message.subclusterId, message.messageId], message)
 
-      // value is decrypted so we can adjust the UI accordingly, new message notifications etc.
-      // but ideally, all messages go through the same process to be rendered, so we actually
-      // pass the encrypted packet to the add message method on this component.
+      await db[channelId].put([value.ts, message.messageId], message)
+
+      // should probably insert rather than append
       this.appendMessage(message)
     })
   }
@@ -254,28 +251,38 @@ async function Messages (props) {
   let elCurrentMessage = null
   let currentMessageStream = ''
 
+  const { data: dataPeer } = await db.state.get('peer')
+  const { data: dataChannel } = await db.channels.get(dataPeer.channelId)
+
+  //
+  // Create an LLM that can partcipate in the chat.
+  //
+  const llm = new LLM(dataChannel)
+
   llm.on('end', async () => {
     const { data: dataPeer } = await db.state.get('peer')
+
+    const ts = Date.now()
 
     const data = JSON.stringify({
       content: currentMessageStream,
       type: 'message',
       nick: 'system',
-      ts: Date.now()
+      ts
     })
 
     const message = {
       messageId: (await sha256(currentMessageStream)).toString('hex'),
       message: (await net.socket.seal(data, dataPeer.subclusterId)).data, // TODO wtf
-      subclusterId: dataPeer.subclusterId,
-      publicKey: Buffer.from(dataPeer.signingKeys.publicKey).toString('base64')
+      publicKey: Buffer.from(dataPeer.signingKeys.publicKey).toString('base64'),
+      subclusterId: Buffer.from(dataPeer.subclusterId).toString('base64')
     }
 
     elCurrentMessage = null
     currentMessageStream = ''
     llm.stop()
 
-    await db.messages.put([message.subclusterId, message.messageId], message)
+    await db.messages.put([ts, message.messageId], message)
   })
 
   llm.on('log', data => {
@@ -313,9 +320,9 @@ async function Messages (props) {
 
   const publish = async (content) => {
     const { data: dataPeer } = await db.state.get('peer')
-    const { data: dataChannel } = await db.channels.get(dataPeer.subclusterId)
+    const { data: dataChannel } = await db.channels.get(dataPeer.channelId)
 
-    const subcluster = net.subclusters[dataPeer.subclusterId]
+    const subcluster = net.subclusters[dataPeer.channelId]
     if (!subcluster) return // shouldn't happen but let's check anyway.
 
     const opts = {
@@ -325,11 +332,13 @@ async function Messages (props) {
     if (content === lastContent) return
     lastContent = content
 
+    const ts = Date.now()
+
     const message = {
       content,
-      type: 'message',
       nick: dataPeer.nick,
-      ts: Date.now()
+      ts,
+      type: 'message'
     }
 
     //
@@ -351,7 +360,7 @@ async function Messages (props) {
 
     for (const packet of data) {
       const message = packetToMessage(packet)
-      await db.messages.put([message.subclusterId, message.messageId], message)
+      await db[dataPeer.channelId].put([ts, message.messageId], message)
       this.appendMessage(message)
     }
   }
@@ -387,8 +396,7 @@ async function Messages (props) {
     // only chat to @ai when it's mentioned.
     if (/^@ai /.test(data)) {
       elCurrentMessage = null // invalidate the current message
-      data = data.replace(/^@ai\s+/, '')
-      llm.chat(data)
+      llm.chat(data.replace(/^@ai\s+/, ''))
     }
 
     //
@@ -420,6 +428,7 @@ async function Messages (props) {
   // On desktop, enter should send, but shift-enter should create a new line.
   //
   const onkeydown = (e) => {
+    setPlaceholderText()
     if (isMobile) return // only the button should send on mobile
     if (e.key === 'Enter' && !e.shiftKey) onSendPress()
   }
@@ -432,20 +441,11 @@ async function Messages (props) {
     setPlaceholderText()
   }
 
-  const { data: dataPeer } = await db.state.get('peer')
-  const { data: dataChannel } = await db.channels.get(dataPeer.subclusterId)
-
   //
   // The fist time this component renders we can get the data for the current
   // channel from the datatabase and pass that to the virtual list component.
   //
-  const query = {
-    gte: [dataPeer.subclusterId],
-    lte: [dataPeer.subclusterId, ['\xFF']]
-    // reverse: true 
-  }
-
-  const { data: dataMessages } = await db.messages.readAll(query)
+  const { data: dataMessages } = await db[dataPeer.channelId].readAll({ limit: 5000 })
 
   //
   // Unencrypt the messages
@@ -474,7 +474,7 @@ async function Messages (props) {
       //
       // The thing that actually handles rendering the messages
       //
-      await VirtualMessages({ data: { id: dataPeer.subclusterId }, rows }),
+      await VirtualMessages({ data: { id: dataPeer.channelId }, rows }),
 
       //
       // The input area

@@ -18,7 +18,7 @@ function Text (props, ...children) {
 
   Object.defineProperty(this, 'value', {
     get: () => el.value,
-    set: (s) => { el.value = s; },
+    set: (s) => { el.value = s },
     enumerable: true,
     configurable: true
   })

@@ -8,49 +8,22 @@ function Modal (props, ...children) {
 
   let escapeListener
 
-  //
-  // Reparenting the component allows us to declare it
-  // where ever we want but then ensure its global.
-  //
-  this.on('connected', event => {
-    const el = this.parentNode.removeChild(this)
-    document.body.appendChild(el)
-  })
-
   Object.defineProperty(this, 'value', {
     get: () => {
       const nodes = [...this.querySelectorAll('[data-slot]')]
       return Object.fromEntries(nodes.map(node => [node.dataset.slot, node.value]))
     },
+    set: (o) => {
+      if (!o) return
+
+      const nodes = [...this.querySelectorAll('[data-slot]')]
+      for (const [k, v] of Object.entries(o)) {
+        const node = nodes.find(node => node.dataset.slot === k)
+        if (node) node.value = v
+      }
+    },
     enumerable: true,
     configurable: true
-  })
-
-  //
-  // This component implements a "slot pattern". When rendered,
-  // it inserts the supplied tree into it's own tree. When the
-  // .render method is called, it finds all the leaf nodes that
-  // have slots and fills them with prop values. For example...
-  //
-  // // At the call site...
-  //
-  // myModal.render({ slots: { name: 'alice' })
-  //
-  // // At declartion...
-  //
-  // Modal({
-  //   Text({ data: { slot: 'name' } })
-  // })
-  //
-  this.on('updated', event => {
-    if (!props.slots) return
-
-    const nodes = [...this.querySelectorAll('[data-slot]')]
-
-    for (const node of nodes) {
-      const slot = node.dataset.slot
-      if (props.slots[slot]) node.value = props.slots[slot]
-    }
   })
 
   const close = () => {
@@ -112,7 +85,7 @@ function Modal (props, ...children) {
 
   return (
     div({ class: 'overlay' },
-      div({ class: 'dialog', ...props },
+      div({ class: 'dialog' },
         header({ class: 'draggable' },
           span({ class: 'spacer' }),
           span({ class: 'title' }, props.header || 'Dialog'),
@@ -124,7 +97,7 @@ function Modal (props, ...children) {
         ),
         main({ class: 'content' }, ...children),
         footer(buttons.map(config =>
-          Button({ data: { value: config.value } }, config.label)
+          Button({ class: config.class, data: { value: config.value, event: config.event } }, config.label)
         ))
       )
     )

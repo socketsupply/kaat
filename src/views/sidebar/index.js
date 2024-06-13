@@ -1,16 +1,21 @@
 import process from 'socket:process'
 
+import Indexed from '@socketsupply/indexed'
+
 import { Register } from '../../lib/component.js'
+import { Switch } from '../../components/switch.js'
+import { Group } from '../../components/group.js'
 
 async function Channels (props) {
   const {
-    data,
     net,
     db
   } = props
 
+  const { data: dataChannels } = await db.channels.readAll()
   const { data: dataPeer } = await db.state.get('peer')
 
+  const rows = [...dataChannels.values()]
   //
   // When a channel is clicked, activate or manage it.
   //
@@ -20,25 +25,51 @@ async function Channels (props) {
 
     switch (el.dataset.event) {
       case 'manage-channel': {
-        const channel = data.find(ch => ch.subclusterId === el.dataset.value)
+        const channel = rows.find(ch => ch.channelId === el.dataset.value)
         if (!channel) return
 
-        const elDialog = document.getElementById('manage-channel')
+        const elModal = document.getElementById('manage-channel')
 
-        elDialog.render({
-          slots: elDialog.value
-        })
+        elModal.value = channel
 
-        const res = await elDialog.open()
+        const res = await elModal.open()
+
+        if (res === 'delete') {
+          await Indexed.drop(channel.channelId)
+          await db.channels.del(channel.channelId)
+
+          if (net.subclusters[channel.channelId]) {
+            delete net.subclusters[channel.channelId]
+          }
+
+          const { data: dataPeer } = await db.state.get('peer')
+
+          if (rows.length === 1) {
+            // TODO(@heapwolf): show a toaster error
+            console.log('Its the last channel')
+            return
+          }
+
+          const newChannel = rows.find(ch => ch.channelId !== channel.channelId)
+
+          dataPeer.channelId = newChannel.channelId
+          dataPeer.subclusterId = newChannel.subclusterId
+          
+          await db.state.put('peer', dataPeer)
+
+          this.render()
+        }
+
         break
       }
 
       case 'activate-channel': {
         // Find the new channel, make sure its valid
-        const channel = data.find(ch => ch.subclusterId === el.dataset.value)
+        const channel = rows.find(ch => ch.channelId === el.dataset.value)
         if (!channel) return
 
         const { data: dataPeer } = await db.state.get('peer')
+        dataPeer.channelId = channel.channelId
         dataPeer.subclusterId = channel.subclusterId
         await db.state.put('peer', dataPeer)
 
@@ -65,7 +96,7 @@ async function Channels (props) {
         }
 
         // get the detatched node and reattach it
-        const detatchedNode = this.state[dataPeer.subclusterId]
+        const detatchedNode = this.state[dataPeer.channelId]
 
         if (detatchedNode) {
           // swap the detatched node with the currently attached one
@@ -80,15 +111,15 @@ async function Channels (props) {
     }
   }
 
-  return data.map(channel => {
+  return [...dataChannels.values()].map(channel => {
     return (
       div(
         {
           class: 'channel',
           data: {
             event: 'activate-channel',
-            value: channel.subclusterId,
-            active: channel.subclusterId === dataPeer?.subclusterId
+            value: channel.channelId,
+            active: channel.channelId === dataPeer?.channelId
           },
           onclick
         },
@@ -96,7 +127,7 @@ async function Channels (props) {
           span('#', { class: 'channel-symbol' }), channel.label
         ),
         button(
-          { data: { event: 'manage-channel', value: channel.subclusterId } },
+          { data: { event: 'manage-channel', value: channel.channelId } },
           svg({ class: 'app-icon' },
             use({ 'xlink:href': '#config-icon' })
           )
@@ -145,6 +176,8 @@ async function Sidebar (props) {
 
       const elModal = document.getElementById('create-channel')
 
+      elModal.value = { 'accessToken': crypto.randomUUID() }
+
       const res = await elModal.open()
 
       if (res === 'ok') {
@@ -155,12 +188,15 @@ async function Sidebar (props) {
       return
     }
 
+    if (el?.dataset.event === 'delete-channel') {
+      console.log(el.dataset.value)
+    }
+
     if (el?.dataset.event === 'change-model') {
       event.stopPropagation()
 
       const [fileHandle] = await window.showOpenFilePicker(pickerOpts)
       el.value = fileHandle.name
-      console.log('SWAP THE MODEL', fileHandle)
     }
 
     if (el?.dataset.event === 'copy-icon') {
@@ -171,8 +207,6 @@ async function Sidebar (props) {
       await navigator.clipboard.writeText(text.value)
     }
   }
-
-  const { data: dataChannels } = await db.channels.readAll()
 
   return [
     header({ class: 'primary draggable', onclick },
@@ -190,88 +224,7 @@ async function Sidebar (props) {
       )
     ),
     div({ class: 'content' },
-      await Channels({ id: 'channels', data: [...dataChannels.values()], db })
-    ),
-
-    Modal(
-      {
-        id: 'create-channel',
-        header: 'Create Channel',
-        style: { width: '420px' },
-        buttons: [{ value: 'ok', label: 'OK' }],
-        onclick
-      },
-      div({ class: 'grid' },
-        Text({
-          errorMessage: 'Nope',
-          label: 'Channel Name',
-          pattern: '[a-zA-Z0-9 ]+',
-          data: { slot: 'label' },
-          placeholder: 'Space Camp'
-        }),
-        Text({
-          errorMessage: 'Nope',
-          label: 'Access Token',
-          type: 'password',
-          icon: 'copy-icon',
-          data: { slot: 'accessToken' },
-          placeholder: 'c52d1bf7-1875-4d2f-beee-bbfe46f11174'
-        }),
-        Text({
-          label: 'Path To Agent Model',
-          value: 'model.gguf',
-          readonly: true,
-          data: { slot: 'modelPath' },
-          icon: 'config-icon',
-        }),
-        Text({
-          label: 'Initial Prompt',
-          placeholder: 'You are a coding assistant focused on Web Development.',
-          data: { slot: 'modelPrompt' },
-        })
-      )
-    ),
-
-    Modal(
-      {
-        id: 'manage-channel',
-        header: 'Manage Channel',
-        style: { width: '420px' },
-        buttons: [
-          { value: 'ok', label: 'OK' },
-          { value: 'delete', label: 'Delete' }
-        ],
-        onclick
-      },
-      div({ class: 'grid' },
-        Text({
-          errorMessage: 'Nope',
-          label: 'Channel Name',
-          data: { slot: 'channelName' },
-          pattern: '[a-zA-Z0-9 ]+',
-          placeholder: 'Space Camp'
-        }),
-        Text({
-          errorMessage: 'Nope',
-          label: 'Secret Key',
-          data: { slot: 'accessToken' },
-          type: 'password',
-          icon: 'copy-icon',
-          placeholder: 'Channel Key'
-        }),
-        Text({
-          label: 'Path To Agent Model',
-          value: 'model.gguf',
-          readonly: true,
-          data: { event: 'change-model', slot: 'pathToModel' },
-          icon: 'config-icon',
-        }),
-        Text({
-          label: 'Initial Prompt',
-          value: 'You are a coding assistant focused on Web Development.',
-          data: { event: 'change-model-prompt', slot: 'prompt' },
-        })
-      )
+      await Channels({ id: 'channels', db, net })
     )
   ]
 }

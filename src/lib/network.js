@@ -1,3 +1,4 @@
+import Indexed from '@socketsupply/indexed'
 import { network as createNetwork, Encryption } from 'socket:network'
 
 const network = async db => {
@@ -7,18 +8,31 @@ const network = async db => {
   let subclusters = {}
 
   const createChannel = async (channel) => {
+    // Create a shared key from from the access token
     const sharedKey = await Encryption.createSharedKey(channel.accessToken)
+
+    // Initialize a subcluster from that sharedKey
     const subcluster = await socket.subcluster({ sharedKey })
-    const derivedKeys = await Encryption.createKeyPair(sharedKey)
-    const subclusterId = Buffer.from(derivedKeys.publicKey).toString('base64')
 
-    if (!dataPeer.subclusterId) dataPeer.subclusterId = subclusterId
+    // Create a channel id from the hex of the subclusterId, used by the UI
+    channel.channelId = Buffer.from(subcluster.subclusterId).toString('hex')
 
-    channel.subclusterId = subclusterId
-    channel.sharedKey = sharedKey
-    subclusters[channel.subclusterId] = subcluster
+    // Used for encryption/decryption
+    channel.subclusterId = Buffer.from(subcluster.subclusterId).toString('base64')
 
-    await db.channels.put(channel.subclusterId, channel)
+    // Create defaults on the peer if it doesnt already have them
+    if (!dataPeer.channelId) {
+      dataPeer.channelId = channel.channelId
+      dataPeer.subclusterId = channel.subclusterId
+    }
+
+    // Make the subcluster avaialable by the channel id
+    subclusters[channel.channelId] = subcluster
+
+    // Create a table for the channel messages
+    db[channel.channelId] = await Indexed.open(channel.channelId)
+
+    await db.channels.put(channel.channelId, channel)
   }
 
   //
@@ -35,17 +49,30 @@ const network = async db => {
 
     socket = await createNetwork(dataPeer)
 
+    const modelDefaults = {
+      path: `model.gguf`,
+      prompt: `<s>[INST]You're a coding assistant focused on Web Development. You try to provide concise answers about html, css, and javascript questions.[/INST]</s>`,
+      chatml: false,
+      conversation: true,
+      // repeat_penalty: '1.1',
+      // temp: '0.6',
+      // instruct: true,
+      n_ctx: 1024
+    }
+
     //
     // Random channel data for first-timers to share with friends.
     //
     let channels = [
       {
         accessToken: crypto.randomUUID(),
-        label: 'work'
+        label: 'work',
+        ...modelDefaults
       },
       {
         accessToken: crypto.randomUUID(),
-        label: 'fun'
+        label: 'fun',
+        ...modelDefaults
       }
     ]
 
@@ -62,7 +89,8 @@ const network = async db => {
     const { data: dataChannels } = await db.channels.readAll()
 
     for (const channel of dataChannels.values()) {
-      subclusters[channel.subclusterId] = await socket.subcluster({ sharedKey: channel.sharedKey })
+      const sharedKey = await Encryption.createSharedKey(channel.accessToken)
+      subclusters[channel.channelId] = await socket.subcluster({ sharedKey })
     }
   }
 
@@ -96,7 +124,7 @@ const network = async db => {
   //
   socket.on('#debug', (pid, ...args) => {
     if (new RegExp(globalThis.DEBUG).test(output)) {
-      console.log(pid.slice(0, 6), ...args)
+      // console.log(pid.slice(0, 6), ...args)
     }
   })
 

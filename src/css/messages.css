@@ -59,10 +59,12 @@
 
   #input .placeholder-text {
     position: absolute;
-    color: var(--x-info);
+    left: 14px;
+    font-size: 16px;
+    color: var(--x-input-border);
     pointer-events: none;
     transform: translateX(0%);
-    transition: transform .2s ease, z-index .3s ease, opacity .3s ease;
+    transition: transform .3s ease, z-index .3s ease, opacity .3s ease;
 
     &.hide {
       opacity: 0;

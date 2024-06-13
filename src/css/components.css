@@ -241,8 +241,43 @@ button[type="icon"] {
   height: 32px;
 }
 
+button.delete,
 button[data-value="delete"] {
   background-color: var(--x-danger) !important;
   color: wheat !important;
 }
 
+button.confirm,
+button[type="confirm"] {
+  background-color: accentcolor !important;
+  color: white !important;
+}
+
+/* Swtich */
+
+switch label {
+  font-size: 12px;
+  display: grid;
+  align-items: center;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  color: var(--x-info);
+}
+
+switch label input {
+  transform: scale(1.2);
+}
+
+/* Group */
+group > label {
+  position: absolute;
+  top: -20px;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--x-info);
+}
+
+group {
+  position: relative;
+  margin-top: 24px;
+}
