@@ -146,68 +146,6 @@ async function Sidebar (props) {
     db
   } = props
 
-  const vProfilePositionTop = isMobile ? 90 : 48
-  const vProfileTransformOrigin = isMobile ? 100 : 80
-  const vProfileTransformMag = isMobile ? 0.5 : 0.08
-
-  const pickerOpts = {
-    types: [
-      {
-        description: 'Select A Model File',
-        accept: {
-          '*/*': ['.gguf']
-        }
-      }
-    ],
-    excludeAcceptAllOption: true,
-    multiple: false
-  }
-
-  const onclick = async (event, match) => {
-    const el = match('[data-event]')
-
-    if (el?.dataset.event === 'profile-open') {
-      const elProfile = document.getElementById('profile')
-      elProfile.moveTo(vProfilePositionTop)
-    }
-
-    if (el?.dataset.event === 'create-channel-open') {
-      event.stopPropagation()
-
-      const elModal = document.getElementById('create-channel')
-
-      elModal.value = { 'accessToken': crypto.randomUUID() }
-
-      const res = await elModal.open()
-
-      if (res === 'ok') {
-        await net.createChannel(elModal.value)
-      }
-
-      this.render()
-      return
-    }
-
-    if (el?.dataset.event === 'delete-channel') {
-      console.log(el.dataset.value)
-    }
-
-    if (el?.dataset.event === 'change-model') {
-      event.stopPropagation()
-
-      const [fileHandle] = await window.showOpenFilePicker(pickerOpts)
-      el.value = fileHandle.name
-    }
-
-    if (el?.dataset.event === 'copy-icon') {
-      e.preventDefault()
-
-      const el = match('[data-event="copy-icon"]')
-      const text = el.closest('text')
-      await navigator.clipboard.writeText(text.value)
-    }
-  }
-
   return [
     header({ class: 'primary draggable', onclick },
       div({ class: 'content' },

@@ -27,6 +27,7 @@ async function ModelCreateChannel (props) {
         label: 'Access Token',
         type: 'password',
         icon: 'copy-icon',
+        iconEvent: 'copy',
         data: { slot: 'accessToken' },
         placeholder: 'c52d1bf7-1875-4d2f-beee-bbfe46f11174'
       }),
@@ -97,6 +98,7 @@ async function ModelManageChannel (props) {
         data: { slot: 'accessToken' },
         type: 'password',
         icon: 'copy-icon',
+        iconEvent: 'copy',
         placeholder: 'Channel Key'
       }),
       Text({

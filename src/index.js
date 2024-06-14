@@ -16,6 +16,8 @@ import { ModelManageChannel, ModelCreateChannel } from './views/channel-modals.j
 async function App () {
   const isMobile = ['android', 'ios'].includes(process.platform)
 
+  const vProfilePositionTop = isMobile ? 90 : 48
+
   document.body.setAttribute('hardware', isMobile ? 'mobile' : 'desktop')
   document.body.setAttribute('platform', process.platform)
 
@@ -137,9 +139,10 @@ async function App () {
 
       if (res === 'ok') {
         await net.createChannel(elModal.value)
+        const elChannels = document.querySelector('channels')
+        elChannels.render()
       }
 
-      this.render()
       return
     }
 
@@ -154,10 +157,10 @@ async function App () {
       el.value = fileHandle.name
     }
 
-    if (el?.dataset.event === 'copy-icon') {
+    if (el?.dataset.event === 'copy') {
+      event.stopPropagation()
       e.preventDefault()
 
-      const el = match('[data-event="copy-icon"]')
       const text = el.closest('text')
       await navigator.clipboard.writeText(text.value)
     }

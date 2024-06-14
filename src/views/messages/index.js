@@ -155,25 +155,18 @@ async function Messages (props) {
     const pk = message.publicKey
 
     const { data: dataClaim } = await db.claims.get(pk)
-    const { err, data: dataOpened } = await net.socket.open(message.message, message.subclusterId)
-
-    if (err) {
-      console.log('Unable to decrypt', message.subclusterId, message.message.length)
-      return
-    }
+    const opened = await net.socket.open(Buffer.from(message.message), message.subclusterId)
 
     const props = {
       messageId: message.messageId,
       timestamp: Date.now()
     }
 
-    if (err) {
-      props.content = `<Encrypted - (${err.message})>`
-      props.failed = true
+    if (!opened) {
+      props.content = `<Encrypted>`
     } else {
       try {
-        const buf = Buffer.from(dataOpened).toString()
-        const json = JSON.parse(buf)
+        const json = JSON.parse(Buffer.from(opened).toString())
 
         props.content = json.content
         props.timestamp = json.ts
@@ -215,6 +208,7 @@ async function Messages (props) {
   //
   for (const [channelId, subcluster] of Object.entries(net.subclusters)) {
     subcluster.on('message', async (value, packet) => {
+      console.log('MESSAGE', value, packet)
       if (!db[channelId]) {
         console.warn('message arrived without channel in db')
         return
@@ -273,16 +267,16 @@ async function Messages (props) {
 
     const message = {
       messageId: (await sha256(currentMessageStream)).toString('hex'),
-      message: (await net.socket.seal(data, dataPeer.subclusterId)).data, // TODO wtf
+      message: (await net.socket.seal(data, dataPeer.subclusterId)), // TODO wtf
       publicKey: Buffer.from(dataPeer.signingKeys.publicKey).toString('base64'),
-      subclusterId: Buffer.from(dataPeer.subclusterId).toString('base64')
+      subclusterId: dataPeer.subclusterId
     }
 
     elCurrentMessage = null
     currentMessageStream = ''
     llm.stop()
 
-    await db.messages.put([ts, message.messageId], message)
+    await db[dataPeer.channelId].put([ts, message.messageId], message)
   })
 
   llm.on('log', data => {
@@ -350,19 +344,7 @@ async function Messages (props) {
     // and eventually distributed, fanned-out to k random peers, prioritizing
     // on the subcluster members.
     //
-    const { err, data } = await subcluster.emit('message', message, opts)
-
-    if (err) {
-      // TODO(@heapwolf): Decide how to print this to the UI
-      console.error(err)
-      return
-    }
-
-    for (const packet of data) {
-      const message = packetToMessage(packet)
-      await db[dataPeer.channelId].put([ts, message.messageId], message)
-      this.appendMessage(message)
-    }
+    await subcluster.emit('message', message, opts)
   }
 
   const onSendPress = async () => {
@@ -445,7 +427,7 @@ async function Messages (props) {
   // The fist time this component renders we can get the data for the current
   // channel from the datatabase and pass that to the virtual list component.
   //
-  const { data: dataMessages } = await db[dataPeer.channelId].readAll({ limit: 5000 })
+  const { data: dataMessages } = await db[dataPeer.channelId].readAll({ limit: 5000, reverse: true })
 
   //
   // Unencrypt the messages

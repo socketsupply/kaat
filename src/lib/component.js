@@ -160,7 +160,11 @@ export function Register (Fn) {
           let isUpdate = false
           if (property in target) isUpdate = true
           target[property] = value
-          if (isUpdate) el.render()
+
+          if (isUpdate) {
+            clearTimeout(isUpdate)
+            isUpdate = setTimeout(() => el.render())
+          }
           return true
         }
       })
