@@ -1,5 +1,7 @@
 body {
   background: transparent;
+  position: relative;
+  height: 100dvh;
   color: var(--x-primary);
   padding: 0;
   margin: 0;
@@ -8,14 +10,17 @@ body {
   -webkit-user-select: none;
   user-select: none;
   overflow: hidden;
+  will-change: height;
+  opacity: 1;
+  transition: opacity 1s ease-in-out;
+}
+
+app {
   position: absolute;
   top: 0;
   bottom: 0;
   left: 0;
   right: 0;
-  will-change: width, height, opacity;
-  opacity: 1;
-  transition: opacity 1s ease-in-out;
 }
 
 body.loading {
@@ -30,7 +35,7 @@ body.loading {
   right: 0;
   border-radius: 12px 12px 0 0;
   overflow: hidden;
-  will-change: transform;
+  will-change: transform, height;
   background: var(--x-background);
   box-shadow: 0 50vh 0 0 var(--x-background);
 }

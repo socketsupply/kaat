@@ -181,12 +181,6 @@ async function Messages (props) {
     return props
   }
 
-  this.appendMessage = async (message) => {
-    const child = await Message(await prepareMessageForReading(message))
-    const parent = document.querySelector('virtual-messages .buffer-content')
-    parent.prepend(child)
-  }
-
   const packetToMessage = (packet) => {
     //
     // Packets that we create wont be fragmented, so we dont need to
@@ -203,50 +197,52 @@ async function Messages (props) {
     }
   }
 
-  //
-  // Handle messages from each network subcluster that was initialized from the database
-  //
-  for (const [channelId, subcluster] of Object.entries(net.subclusters)) {
-    subcluster.on('message', async (value, packet) => {
-      console.log('MESSAGE', value, packet)
-      if (!db[channelId]) {
-        console.warn('message arrived without channel in db')
-        return
-      }
+  const { data: dataPeer } = await db.state.get('peer')
+  const { data: dataChannel } = await db.channels.get(dataPeer.channelId)
+ 
+  const elChannels = document.querySelector('channels')
 
-      //
-      // There are a few high-level conditions that we should check before accepting data
-      //
-      if (!packet.verified) return // nope. just gtfo
-      if (packet.index !== -1) return // not interested in fragments until they have coalesced
+  net.subclusters[dataPeer.channelId].on('message', async (value, packet) => {
+    //
+    // There are a few high-level conditions that we should check before accepting data
+    //
+    if (!packet.verified) return // nope. just gtfo
+    if (packet.index !== -1) return // not interested in fragments until they have coalesced
 
-      // messages must be parsable
-      try { value = JSON.parse(value) } catch { return }
+    // messages must be parsable
+    try { value = JSON.parse(value) } catch { return }
 
-      // messages must have content
-      if (!value || !value.content) return
+    // messages must have content
+    if (!value || !value.content) return
 
-      // messages must have a type
-      if (typeof value.type !== 'string') return
+    // messages must have a type
+    if (typeof value.type !== 'string') return
 
-      // let's save this one, we want it.
-      const message = packetToMessage(packet)
+    // let's save this one, we want it.
+    const message = packetToMessage(packet)
 
-      await db[channelId].put([value.ts, message.messageId], message)
+    await db[dataPeer.channelId].put([value.ts, message.messageId], message)
 
-      // should probably insert rather than append
-      this.appendMessage(message)
-    })
-  }
+    const child = await Message(await prepareMessageForReading(message))
+    let parent = channels.state[dataPeer.channelId]
+
+    if (!parent) { // no prior channel switching, fall back
+      parent = document.querySelector('virtual-messages')
+    }
+
+    // TODO(@heapwolf): if the channel is not selected, mark the channel as having new messages, re-render `#channels`.
+
+    const messageBuffer = parent.querySelector('.buffer-content')
+
+    // should probably insert rather than append
+    messageBuffer.prepend(child)
+  })
 
   //
   // Handle output from the LLM and input from the user.
   //
   let elCurrentMessage = null
   let currentMessageStream = ''
-
-  const { data: dataPeer } = await db.state.get('peer')
-  const { data: dataChannel } = await db.channels.get(dataPeer.channelId)
 
   //
   // Create an LLM that can partcipate in the chat.
@@ -267,7 +263,7 @@ async function Messages (props) {
 
     const message = {
       messageId: (await sha256(currentMessageStream)).toString('hex'),
-      message: (await net.socket.seal(data, dataPeer.subclusterId)), // TODO wtf
+      message: (await net.socket.seal(data, dataPeer.subclusterId)),
       publicKey: Buffer.from(dataPeer.signingKeys.publicKey).toString('base64'),
       subclusterId: dataPeer.subclusterId
     }
@@ -369,7 +365,6 @@ async function Messages (props) {
     //
     if (/^@ai stop$/.test(data)) {
       llm.stop()
-      console.log('STOPPING')
       elInputMessage.innerHTML = ''
       setPlaceholderText()
       return
@@ -397,7 +392,7 @@ async function Messages (props) {
     const elInputMessage = this.querySelector('#input-message')
     const elPlaceholder = this.querySelector('.placeholder-text')
 
-    if (elInputMessage.textContent.trim()) {
+    if (elInputMessage.textContent.length) {
       elPlaceholder.classList.add('hide')
       elPlaceholder.classList.remove('show')
     } else {

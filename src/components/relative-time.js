@@ -35,14 +35,14 @@ function RelativeTime (props) {
   const timer = setInterval(() => {
     if (--updates === 0) return clearInterval(timer)
     const o = calculate()
-    this.innerHTML = o.value
+    this.textContent = o.value
   }, 1000)
 
   this.clear = () => {
     clearInterval(timer)
   }
 
-  this.innerHTML = o.value
+  this.textContent = o.value
 }
 
 RelativeTime = Register(RelativeTime)

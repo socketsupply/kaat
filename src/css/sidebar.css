@@ -1,8 +1,20 @@
-modal#manage-channel .grid,
-modal#create-channel .grid {
+modal .grid,
+modal .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
+}
+
+body[hardware="mobile"] {
+  modal {
+    .dialog {
+      min-width: 90vw;
+    }
+
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
 }
 
 #sidebar {

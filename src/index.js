@@ -26,13 +26,21 @@ async function App () {
     // For our UI design, subscribe to keyboard events. The layout should
     // change slightly when the input moves away from the bottom bevel.
     //
+    let keyboardHeight
+
     window.addEventListener('keyboard', ({ detail }) => {
       if (detail.value.event === 'will-show') {
         document.body.setAttribute('keyboard', 'true')
       }
 
       if (detail.value.event === 'will-hide') {
-        document.body.setAttribute('keyboard', 'false')
+        document.body.removeAttribute('keyboard')
+      }
+
+      if (detail.value.event === 'did-show') {
+      }
+
+      if (detail.value.event === 'did-hide') {
       }
     })
   }

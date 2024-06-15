@@ -120,13 +120,14 @@ const network = async db => {
   })
 
   //
-  // Logging! Just tweak to filter logs, ie globalThis.DEBUG = '*'
+  // Debugging! Just tweak to filter logs, this is a firehose!
+  // Don't listen to debug in production, it can strain the CPU.
   //
-  socket.on('#debug', (pid, ...args) => {
-    console.log(pid.slice(0, 6), ...args)
-  })
+  // socket.on('#debug', (pid, ...args) => {
+    // console.log(pid.slice(0, 6), ...args)
+  // })
 
-  socket.on('#packet', (...args) => console.log('PACKET', ...args))
+  // socket.on('#packet', (...args) => console.log('PACKET', ...args))
   // socket.on('#send', (...args) => console.log('SEND', ...args))
 
   return {
