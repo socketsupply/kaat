@@ -33,6 +33,33 @@ async function VirtualMessages (props) {
   const messages = props.rows.filter(Boolean)
   const rows = await Promise.all(messages.map(Message))
 
+  if (rows.length === 0) {
+    const onclick = (event, match) => {
+      const el = match('[data-event]')
+
+      if (el?.dataset.event === 'manage-channel') {
+        const elChannels = document.querySelector('channels')
+        elChannels.manageChannel(el.dataset.value)
+      }
+    }
+
+    return div({ class: 'empty-state' },
+      div({ onclick },
+        svg({ class: 'empty-state-icon' },
+          use({ 'xlink:href': '#cat-icon' })
+        ),
+        'Invite your friends by sharing this channel\'s access token. Access it by clicking ',
+        a({ href: '#', data: { event: 'manage-channel', value: props.data.id } }, 'here'),
+        ' to open this channel\'s settings.',
+        br(),
+        br(),
+        'If someone invited you to a channel, click ',
+        a({ href: '#', data: { event: 'create-channel-open' } }, 'here'),
+        ' to create a new channel using the access token they shared with you.'
+      )
+    )
+  }
+
   return div({ id: 'message-buffer' },
     div({ class: 'buffer-content' }, rows)
   )

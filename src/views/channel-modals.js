@@ -94,7 +94,7 @@ async function ModelManageChannel (props) {
       }),
       Text({
         errorMessage: 'Nope',
-        label: 'Secret Key',
+        label: 'Access Token',
         data: { slot: 'accessToken' },
         type: 'password',
         icon: 'copy-icon',
