@@ -167,7 +167,7 @@ async function App () {
 
     if (el?.dataset.event === 'copy') {
       event.stopPropagation()
-      e.preventDefault()
+      event.preventDefault()
 
       const text = el.closest('text')
       await navigator.clipboard.writeText(text.value)

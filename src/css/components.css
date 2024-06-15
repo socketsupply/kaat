@@ -41,11 +41,12 @@ modal .dialog {
   min-height: 40vh;
   min-width: 50vw;
   max-width: 90vw;
+  max-height: 50vh;
   box-shadow: 0 2px 10px var(--x-modal-overlay);
   opacity: 0;
   pointer-events: none;
   display: grid;
-  grid-template-rows: 50px 1fr 50px;
+  grid-template-rows: 50px 1fr 60px;
 }
 
 modal .dialog > header {
@@ -61,13 +62,14 @@ modal .dialog > header {
 }
 
 modal .dialog > main {
-  padding: 0 20px;
-  padding-bottom: 20px;
+  padding: 28px 20px;
+  overflow: auto;
 }
 
 modal .dialog > footer {
-  height: 50px;
+  height: 60px;
   justify-content: end;
+  align-items: center;
   padding: 0 20px;
   display: flex;
   gap: 10px;

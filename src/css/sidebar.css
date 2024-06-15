@@ -9,6 +9,8 @@ body[hardware="mobile"] {
   modal {
     .dialog {
       min-width: 90vw;
+      max-height: 40vh;
+      margin-top: 38px;
     }
 
     .grid {

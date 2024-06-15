@@ -345,20 +345,9 @@ async function Messages (props) {
 
   const onSendPress = async () => {
     const elInputMessage = document.getElementById('input-message')
+
     let data = elInputMessage.innerText.trim()
-
-    //
-    // 1. Save the user's message to the database for this channel.
-    // 2. If necessary, talk to the LLM. But don't broadcast it.
-    // 3. Write it to the network with the current subcluster info.
-    // 4. Reset the input
-    //
-
     if (!data.length) return
-    // elCurrentMessage = await Message({ content: data, mine: true, nick: 'me', timestamp: Date.now() })
-
-    // const messagesBuffer = document.querySelector('virtual-messages .buffer-content')
-    // if (elCurrentMessage) messagesBuffer.prepend(elCurrentMessage)
 
     //
     // tell the LLM to stfu
@@ -459,7 +448,7 @@ async function Messages (props) {
       div({ id: 'input' },
         span({ class: 'placeholder-text show' }, 'Enter your message...'),
 
-        div({ id: 'input-message', contenteditable: 'plaintext-only', onkeydown, onkeyup }),
+        div({ id: 'input-message', contenteditable: 'true', onkeydown, onkeyup }),
 
         button({ id: 'send-message', onclick },
           svg({ class: 'app-icon' },

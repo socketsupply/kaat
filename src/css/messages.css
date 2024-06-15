@@ -37,6 +37,13 @@
     line-height: 18px;
   }
 
+  #input img {
+    width: 150px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid var(--x-border);
+  }
+
   #input #input-message {
     color: var(--x-primary);
     background: transparent;

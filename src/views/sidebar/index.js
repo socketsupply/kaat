@@ -83,7 +83,7 @@ async function Channels (props) {
 
         // Change the messages buffer area to show the new label
         const elMessagesHeader = document.querySelector('#messages header .title')
-        elMessagesHeader.textContent = `#${channel.label}`
+        if (elMessagesHeader) elMessagesHeader.textContent = `#${channel.label}`
 
         // get the current node
         const attachedNode = document.querySelector('virtual-messages')
@@ -98,7 +98,7 @@ async function Channels (props) {
         // get the detatched node and reattach it
         const detatchedNode = this.state[dataPeer.channelId]
 
-        if (detatchedNode) {
+        if (attachedNode && detatchedNode) {
           // swap the detatched node with the currently attached one
           attachedNode.parentElement.replaceChild(detatchedNode, attachedNode)
         } else {
@@ -111,30 +111,34 @@ async function Channels (props) {
     }
   }
 
-  return [...dataChannels.values()].map(channel => {
-    return (
-      div(
-        {
-          class: 'channel',
-          data: {
-            event: 'activate-channel',
-            value: channel.channelId,
-            active: channel.channelId === dataPeer?.channelId
-          },
-          onclick
-        },
-        span({ class: 'label' },
-          span('#', { class: 'channel-symbol' }), channel.label
-        ),
-        button(
-          { data: { event: 'manage-channel', value: channel.channelId } },
-          svg({ class: 'app-icon' },
-            use({ 'xlink:href': '#config-icon' })
-          )
+  const ontouchend = (e, m) => {
+    onclick(e, m)
+    e.preventDefault()
+  }
+
+  const channels = [...dataChannels.values()]
+
+  return div({ onclick, ontouchend }, channels.map(channel => {
+    return div(
+      {
+        class: 'channel',
+        data: {
+          event: 'activate-channel',
+          value: channel.channelId,
+          active: channel.channelId === dataPeer?.channelId
+        }
+      },
+      span({ class: 'label' },
+        span('#', { class: 'channel-symbol' }), channel.label
+      ),
+      button(
+        { data: { event: 'manage-channel', value: channel.channelId } },
+        svg({ class: 'app-icon' },
+          use({ 'xlink:href': '#config-icon' })
         )
       )
     )
-  })
+  }))
 }
 
 Channels = Register(Channels)

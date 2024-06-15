@@ -52,6 +52,8 @@ export class Spring {
    * @param {Object} [opts={}] - Options for the animation.
    */
   constructor (el, opts = {}) {
+    if (el.axis) return
+
     this.el = el
     this.opts = opts
     this.axis = opts.axis
