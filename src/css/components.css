@@ -1,7 +1,7 @@
 
 /* Modal */
 
-@keyframes modalSwellIn {
+@keyframes swellIn {
   0% {
     transform: scale(0.95);
     opacity: 0;
@@ -16,7 +16,7 @@
   }
 }
 
-@keyframes modalSwellOut {
+@keyframes swellOut {
   0% {
     transform: scale(1);
     opacity: 1;
@@ -76,15 +76,18 @@ modal .dialog > footer {
 }
 
 modal.open .dialog {
-  animation: modalSwellIn 0.3s forwards ease;
+  animation: swellIn 0.3s forwards ease;
   pointer-events: auto;
 }
 
 modal.close .dialog {
-  animation: modalSwellOut 0.3s forwards ease;
+  animation: swellOut 0.3s forwards ease;
   pointer-events: none;
 }
 
+/* Overlays */
+
+preview .overlay,
 modal .overlay {
   z-index: -1;
   opacity: 0;
@@ -97,6 +100,7 @@ modal .overlay {
   transition: all 0.4s ease;
 }
 
+preview.open .overlay,
 modal.open .overlay {
   z-index: 1000;
   opacity: 1;
@@ -284,3 +288,41 @@ group {
   position: relative;
   margin-top: 24px;
 }
+
+/* Preview */
+preview {
+  .image {
+    border-radius: 12px;
+    box-shadow: 0 2px 10px var(--x-modal-overlay);
+    opacity: 0;
+    pointer-events: none;
+    display: grid;
+    overflow: hidden;
+    max-width: 90vw;
+    max-height: 80vh;
+    margin: auto;
+    justify-content: center;
+    align-items: center;
+
+    img {
+      height: -webkit-fill-available;
+      object-fit: contain; /* Ensure the image fits within the parent div without distortion */
+    }
+  }
+
+  .close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+  }
+}
+
+preview.open .image {
+  animation: swellIn 0.3s forwards ease;
+  pointer-events: auto;
+}
+
+preview.close .image {
+  animation: swellOut 0.3s forwards ease;
+  pointer-events: none;
+} 

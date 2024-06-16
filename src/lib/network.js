@@ -44,8 +44,19 @@ const network = async db => {
       peerId: await Encryption.createId(),
       signingKeys: await Encryption.createKeyPair(),
       clusterId: await Encryption.createClusterId('kaat'),
-      nick: Math.random().toString(16).slice(2, 8)
     }
+
+    const pk = dataPeer.signingKeys.publicKey
+    const b64pk = Buffer.from(pk).toString('base64')
+
+    await db.claims.put(b64pk, {
+      ctime: Date.now(),
+      nick: Math.random().toString(16).slice(2, 8),
+      status: 'Hello, World!',
+      peerId: dataPeer.peerId,
+      clock: 0,
+      publicKey: b64pk
+    })
 
     socket = await createNetwork(dataPeer)
 
@@ -123,9 +134,9 @@ const network = async db => {
   // Debugging! Just tweak to filter logs, this is a firehose!
   // Don't listen to debug in production, it can strain the CPU.
   //
-  // socket.on('#debug', (pid, ...args) => {
-    // console.log(pid.slice(0, 6), ...args)
-  // })
+  socket.on('#debug', (pid, str, ...args) => {
+    if (str.includes('Unable to')) console.log(pid.slice(0, 6), str, ...args)
+  })
 
   // socket.on('#packet', (...args) => console.log('PACKET', ...args))
   // socket.on('#send', (...args) => console.log('SEND', ...args))

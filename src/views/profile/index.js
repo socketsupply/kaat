@@ -62,13 +62,17 @@ async function Profile (props) {
 
   const { data: dataPeer } = await db.state.get('peer')
 
-  let encodedPublicKey = ''
+  let b64pk = ''
   let nick = ''
+  let status = ''
 
   if (dataPeer) {
     const publicKey = dataPeer.signingKeys.publicKey
-    encodedPublicKey = Buffer.from(publicKey).toString('base64')
-    nick = dataPeer.nick
+    b64pk = Buffer.from(publicKey).toString('base64')
+    
+    const { data: dataClaim } = await db.state.get(b64pk)
+    nick = dataClaim?.nick
+    status = dataClaim?.status
   }
 
   const spring = new Spring(this, {
@@ -156,7 +160,12 @@ async function Profile (props) {
           readOnly: 'true',
           icon: 'copy-icon',
           data: { event: 'settings-public-key' },
-          value: encodedPublicKey
+          value: b64pk
+        }),
+        Text({
+          label: 'Status',
+          data: { event: 'settings-status' },
+          value: status
         })
       ),
       PeerInfo({ id: 'peer-info' })

@@ -90,11 +90,12 @@ button:active {
   background: transparent;
 }
 
+.overlay,
 header.draggable {
   app-region: drag;
   --app-region: drag;
   user-select: none;
-  -webkit-user-select: non1;
+  -webkit-user-select: none;
 }
 
 .view {

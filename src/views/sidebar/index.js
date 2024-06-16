@@ -9,6 +9,7 @@ import { Group } from '../../components/group.js'
 async function Channels (props) {
   const {
     net,
+    isMobile,
     db
   } = props
 
@@ -96,9 +97,19 @@ async function Channels (props) {
       const messagesRoot = document.querySelector('#messages')
       messagesRoot.render()
     }
+
+    if (!isMobile) {
+      // TODO(@heapwolf): make a method on the sidebar for this.
+      const elSidebarToggle = document.getElementById('sidebar-toggle')
+      elSidebarToggle.setAttribute('open', 'false')
+
+      const messages = document.getElementById('messages')
+      messages.moveTo(0)
+    }
   }
 
   const rows = [...dataChannels.values()]
+
   //
   // When a channel is clicked, activate or manage it.
   //
@@ -124,6 +135,7 @@ async function Channels (props) {
   }
 
   const channels = [...dataChannels.values()]
+    .sort((a, b) => a.label.localeCompare(b.label))
 
   return div({ onclick, ontouchend }, channels.map(channel => {
     return div(
@@ -173,7 +185,7 @@ async function Sidebar (props) {
       )
     ),
     div({ class: 'content' },
-      await Channels({ id: 'channels', db, net })
+      await Channels({ id: 'channels', db, net, isMobile })
     )
   ]
 }

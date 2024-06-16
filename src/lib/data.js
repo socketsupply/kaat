@@ -16,7 +16,8 @@ Indexed.onerror = err => {
 }
 
 const database = async () => {
-  // await globalThis.resetData()
+  // return await globalThis.resetData()
+
   const tables = {
     channels: await Indexed.open('channels'),
     claims: await Indexed.open('claims'),
