@@ -14,6 +14,8 @@ let signal // an interval that advertises we are online
 // Message and VirtualMessages render and rerender unencypted messages.
 //
 async function Message (props = {}) {
+  if (!props.messageId) return
+
   this.id = props.messageId
   if (props.mine) this.classList.add('mine')
 
@@ -218,7 +220,7 @@ async function Messages (props) {
         const json = JSON.parse(Buffer.from(opened).toString())
         props.content = json.content
       } catch (err) {
-        console.error(err)
+        console.warn(err)
         return
       }
 
@@ -257,7 +259,7 @@ async function Messages (props) {
  
   const elChannels = document.querySelector('channels')
 
-  net.subclusters[dataPeer.channelId].on('message', async (value, packet) => {
+  const onMessage = async (value, packet) => {
     //
     // There are a few high-level conditions that we should check before accepting data
     //
@@ -295,8 +297,13 @@ async function Messages (props) {
     const messageBuffer = parent.querySelector('.buffer-content')
 
     // should probably insert rather than append
-    if (messageBuffer) messageBuffer.prepend(child)
-  })
+    if (messageBuffer) {
+      messageBuffer.prepend(child)
+      clearEmptyState()
+    }
+  }
+
+  net.subclusters[dataPeer.channelId].on('message', onMessage)
 
   clearInterval(signal)
 
@@ -320,8 +327,8 @@ async function Messages (props) {
       ctime: Date.now(),
       clock: info.clock,
       peerId: info.peerId,
-      status: dataClaim.status,
-      nick: dataClaim.nick
+      status: dataClaim?.status,
+      nick: dataClaim?.nick
     }
 
     const subcluster = net.subclusters[dataPeer.channelId]
@@ -386,7 +393,7 @@ async function Messages (props) {
       data = data.trim() // first token should not be empty
 
       if (data) {
-        elCurrentMessage = await Message({ content: data, nick: 'system', mine: false, timestamp: Date.now() })
+        elCurrentMessage = await Message({ messageId: 'X', content: data, nick: 'system', mine: false, timestamp: Date.now() })
         const parent = document.querySelector('virtual-messages .buffer-content')
         if (elCurrentMessage) parent.prepend(elCurrentMessage)
       }
@@ -467,6 +474,7 @@ async function Messages (props) {
 
           const buf = await blob.arrayBuffer()
           const sizeBeforeCompression = buf.byteLength
+          if (blob.type === 'text/xml') blob.type = 'image/generic'
 
           const compress = new Compressor({ type: blob.type || 'octet-stream' })
           const { bytes } = await compress.from(buf)
@@ -481,7 +489,7 @@ async function Messages (props) {
 
           if (Mb > 1) { // TODO(@heapwolf): could make this a limit in the channel settings.
             // TODO(@heapwolf): put this into the UI, maybe even replace the image with it.
-            console.warn(`Image too big (${Mb}Mb), you\'ll spam the network and get rate limited.`)
+            alert(`Image too big (${Mb}Mb), you\'ll spam the network and get rate limited.`)
             return
           }
 

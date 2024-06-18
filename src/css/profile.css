@@ -9,6 +9,9 @@
   will-change: transform;
   border-radius: 12px 12px 0 0;
   box-shadow: 0px 0px 24px -10px rgba(0, 0, 0, 1);
+  padding-bottom: 80px;
+  display: grid;
+  grid-template-rows: auto 1fr;
 }
 
 #profile > header {
@@ -17,6 +20,7 @@
 
 #profile > .content {
   padding: 20px;
+  overflow: scroll;
 
   .grid {
     display: grid;

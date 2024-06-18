@@ -42,6 +42,66 @@ function PeerInfo (props) {
 
 PeerInfo = Register(PeerInfo)
 
+function PeerMetrics (props) {
+  props.i ??= []
+  props.o ??= []
+
+  return (
+    table(
+      thead(
+        tr(
+          th('Property'),
+          th('Value In:Out')
+        )
+      ),
+      tbody(
+        tr(
+          td('Opener'),
+          td([props.i[0], props.o[0]].join(':'))
+        ),
+        tr(
+          td('Ping'),
+          td([props.i[1], props.o[1]].join(':'))
+        ),
+        tr(
+          td('Pong'),
+          td([props.i[2], props.o[2]].join(':'))
+        ),
+        tr(
+          td('Intro'),
+          td([props.i[3], props.o[3]].join(':'))
+        ),
+        tr(
+          td('Join'),
+          td([props.i[4], props.o[4]].join(':'))
+        ),
+        tr(
+          td('Publish'),
+          td([props.i[5], props.o[5]].join(':'))
+        ),
+        tr(
+          td('Stream'),
+          td([props.i[6], props.o[6]].join(':'))
+        ),
+        tr(
+          td('Sync'),
+          td([props.i[7], props.o[7]].join(':'))
+        ),
+        tr(
+          td('Query'),
+          td([props.i[8], props.o[8]].join(':'))
+        ),
+        tr(
+          td('Rejected'),
+          td([props.i.REJECTED, 'N/A'].join(':'))
+        )
+      )
+    )
+  )
+}
+
+PeerMetrics = Register(PeerMetrics)
+
 async function Profile (props) {
   const {
     net,
@@ -54,10 +114,17 @@ async function Profile (props) {
   const vProfileTransformMag = isMobile ? 0.5 : 0.05
 
   let elMain
+  let elProfileContent
 
   net.socket.on('#ready', networkInfo => {
     const elPeerInfo = document.querySelector('peer-info')
     elPeerInfo.render(networkInfo)
+  })
+
+  net.socket.on('#data', async () => {
+    const elPeerMetrics = document.querySelector('peer-metrics')
+    metrics = await net.socket.getMetrics()
+    elPeerMetrics.render(metrics)
   })
 
   const { data: dataPeer } = await db.state.get('peer')
@@ -65,14 +132,18 @@ async function Profile (props) {
   let b64pk = ''
   let nick = ''
   let status = ''
+  let clusterId = ''
+  let metrics = {}
 
   if (dataPeer) {
     const publicKey = dataPeer.signingKeys.publicKey
     b64pk = Buffer.from(publicKey).toString('base64')
     
-    const { data: dataClaim } = await db.state.get(b64pk)
+    const { data: dataClaim } = await db.claims.get(b64pk)
+
     nick = dataClaim?.nick
     status = dataClaim?.status
+    clusterId = Buffer.from(dataPeer.clusterId).toString('base64')
   }
 
   const spring = new Spring(this, {
@@ -98,6 +169,10 @@ async function Profile (props) {
       elMain.style.transformOriginY = `${vProfileTransformOrigin}%`
     },
     begin: function (event) {
+      // dont slide unless the content is scrolled to the top
+      if (!elProfileContent) elProfileContent = document.querySelector('profile > .content')
+      if (elProfileContent.scrollTop > 0) this.isInteractive = false
+
       if (['BUTTON', 'INPUT'].includes(event.target.tagName)) {
         this.isInteractive = false
       }
@@ -166,9 +241,15 @@ async function Profile (props) {
           label: 'Status',
           data: { event: 'settings-status' },
           value: status
+        }),
+        Text({
+          label: 'ClusterId',
+          data: { event: 'settings-clusterId' },
+          value: clusterId
         })
       ),
-      PeerInfo({ id: 'peer-info' })
+      PeerInfo({ id: 'peer-info' }),
+      PeerMetrics({ id: 'props' })
     )
   ]
 }

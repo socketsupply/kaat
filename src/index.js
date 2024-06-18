@@ -46,6 +46,21 @@ async function App () {
     })
   }
 
+  const setTheme = async (event) => {
+    //
+    // extract the current theme's background color from the CSS variable
+    // and use it to set the color of the actual window.
+    //
+    const w = await application.getCurrentWindow()
+    const styles = window.getComputedStyle(document.body)
+    const rgba = styles.getPropertyValue('--x-window').trim()
+    const { 0: red, 1: green, 2: blue, 3: alpha } = rgba.match(/\d+/g)
+
+    w.setBackgroundColor({ red, green, blue, alpha })
+  }
+
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', setTheme)
+
   //
   // System menus
   //
@@ -194,11 +209,11 @@ async function App () {
         )
       ),
       await Messages({ id: 'messages', class: 'view', ...context }),
-      await Sidebar({ id: 'sidebar', class: 'view', ...context })
-    ),
-    ModelManageChannel(),
-    ModelCreateChannel(),
-    Preview()
+      await Sidebar({ id: 'sidebar', class: 'view', ...context }),
+      ModelManageChannel(),
+      ModelCreateChannel(),
+      Preview()
+    )
   ]
 }
 

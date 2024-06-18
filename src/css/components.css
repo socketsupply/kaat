@@ -305,8 +305,10 @@ preview {
     align-items: center;
 
     img {
-      height: -webkit-fill-available;
+      width: 80vw;
       object-fit: contain; /* Ensure the image fits within the parent div without distortion */
+      aspect-ratio: 1/1;
+      background: var(--x-background);
     }
   }
 

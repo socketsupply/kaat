@@ -96,6 +96,16 @@ const network = async db => {
     socket = await createNetwork(dataPeer)
   }
 
+  window.socket = socket
+
+  globalThis.addEventListener('online', () => {
+    consoe.log('ONLINE')
+  })
+
+  globalThis.addEventListener('offline', () => {
+    console.log('OFFLINE')
+  })
+
   if (Object.keys(subclusters).length === 0) {
     const { data: dataChannels } = await db.channels.readAll()
 
@@ -135,7 +145,28 @@ const network = async db => {
   // Don't listen to debug in production, it can strain the CPU.
   //
   socket.on('#debug', (pid, str, ...args) => {
-    if (str.includes('Unable to')) console.log(pid.slice(0, 6), str, ...args)
+    if (str.includes('DROP')) {
+      console.log(str, ...args)
+    }
+
+    if (str.includes('JOIN')) {
+      console.log(str, ...args)
+    }
+
+    if (str.includes('INTRO')) {
+      console.log(str, ...args)
+    }
+  })
+
+  socket.on('#connection', (packet, peer) => {
+    // sync is bidirectional, so it only needs to be
+    // initiated by one side. in this case we simply
+    // select the lexicographically higher peerId to
+    // kick-off the syncing protocol.
+    if (peer.lastSync > Date.now() - 6000) {
+      socket.sync(peer.peerId)
+      peer.lastSync = Date.now()
+    }
   })
 
   // socket.on('#packet', (...args) => console.log('PACKET', ...args))

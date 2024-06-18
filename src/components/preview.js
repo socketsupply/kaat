@@ -63,9 +63,7 @@ function Preview (props, ...children) {
 
   this.close = () => close()
 
-  const onclick = (event, match) => {
-    if (match('.close')) close()
-  }
+  const onclick = () => close()
 
   return div({ class: 'overlay', onclick },
     button({ class: 'close' },

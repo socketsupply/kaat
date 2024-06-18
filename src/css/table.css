@@ -8,6 +8,7 @@ table {
   border-collapse: separate;
   border-spacing: 0;
   overflow: hidden;
+  margin-bottom: 20px;
 }
 
 table code {
