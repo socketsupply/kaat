@@ -30,8 +30,8 @@ async function ModelCreateChannel (props) {
         iconEvent: 'copy',
         data: { slot: 'accessToken' },
         placeholder: 'c52d1bf7-1875-4d2f-beee-bbfe46f11174'
-      }),
-      Text({
+      })
+      /* Text({
         label: 'Path To Agent Model',
         value: 'model.gguf',
         readonly: true,
@@ -65,7 +65,7 @@ async function ModelCreateChannel (props) {
           value: false,
           data: { event: 'change-model-conversation', slot: 'conversation' },
         })
-      )
+      ) */
     )
   )
 }
@@ -100,8 +100,8 @@ async function ModelManageChannel (props) {
         icon: 'copy-icon',
         iconEvent: 'copy',
         placeholder: 'Channel Key'
-      }),
-      Text({
+      })
+      /* Text({
         label: 'Path To Agent Model',
         value: 'model.gguf',
         readonly: true,
@@ -134,7 +134,7 @@ async function ModelManageChannel (props) {
           value: false,
           data: { event: 'change-model-conversation', slot: 'conversation' },
         })
-      )
+      ) */
     )
   )
 }
