@@ -303,11 +303,14 @@ preview {
     margin: auto;
     justify-content: center;
     align-items: center;
+    min-height: 80vh;
+    aspect-ratio: 1/1;
 
     img {
-      width: 80vw;
-      object-fit: contain; /* Ensure the image fits within the parent div without distortion */
-      aspect-ratio: 1/1;
+      min-width: 100%;
+      min-height: 100%;
+      max-width: 100%;
+      max-height: 100%;
       background: var(--x-background);
     }
   }

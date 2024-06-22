@@ -30,3 +30,5 @@ ssc build -c -p --platform=ios && ssc install-app --platform=ios
 ```
 npm test
 ```
+
+> [!NOTE] The shared secrets used to create symmetrical encryption keys are not stored anywhere, so maybe write them down in a book.

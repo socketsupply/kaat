@@ -1,6 +1,6 @@
 const URL = window.URL || window.webkitURL
 
-const DEFAULT_QUALITY = 0.4
+const DEFAULT_QUALITY = 0.2
 const DEFAULT_SIZE = {
   width: 1000,
   height: 618

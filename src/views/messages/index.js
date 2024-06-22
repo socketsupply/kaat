@@ -200,9 +200,7 @@ async function Messages (props) {
     // First, look up any claims that have been made about the owner of the packet
     // If there is a claim, we can use the nick from it to indicate if it's verified.
     //
-    const pk = message.publicKey
-
-    const { data: dataClaim } = await db.claims.get(pk)
+    const { data: dataClaim } = await db.claims.get(message.publicKey)
     const opened = await net.socket.open(Buffer.from(message.message), message.subclusterId)
 
     const props = {
@@ -303,7 +301,30 @@ async function Messages (props) {
     }
   }
 
+  const onClaim = async (value, packet) => {
+    if (!packet.verified) return // nope. just gtfo
+    if (packet.index !== -1) return // not interested in fragments until they have coalesced
+    if (!packet.usr2) return
+
+    const b64pk = Buffer.from(packet.usr2).toString('base64')
+
+    const { dataClaim } = await db.claims.get(b64pk)
+    if (dataClaim && dataClaim.local) return // don't accept any claim with our own pk
+
+    try {
+      value = JSON.parse(Buffer.from(value))
+    } catch (err) {
+      console.log(err)
+    }
+
+    db.claims.put(b64pk, {
+      ...value,
+      trusted: false
+    })
+  }
+
   net.subclusters[dataPeer.channelId].on('message', onMessage)
+  net.subclusters[dataPeer.channelId].on('claim', onClaim)
 
   clearInterval(signal)
 
@@ -327,11 +348,12 @@ async function Messages (props) {
       ctime: Date.now(),
       clock: info.clock,
       peerId: info.peerId,
-      status: dataClaim?.status,
-      nick: dataClaim?.nick
+      status: dataClaim.status,
+      nick: dataClaim.nick
     }
 
     const subcluster = net.subclusters[dataPeer.channelId]
+
     if (subcluster) await subcluster.emit('claim', claim, opts)
   }, 6e3)
 
@@ -342,9 +364,9 @@ async function Messages (props) {
   let currentMessageStream = ''
 
   //
-  // Create an LLM that can partcipate in the chat.
+  // An example of how you might create an LLM that can partcipate in the chat.
   //
-  const llm = new LLM(dataChannel)
+  /* const llm = new LLM(dataChannel)
 
   llm.on('end', async () => {
     const { data: dataPeer } = await db.state.get('peer')
@@ -403,7 +425,7 @@ async function Messages (props) {
       const elMessage = elCurrentMessage.querySelector('.content')
       if (elMessage) elMessage.appendChild(document.createTextNode(data))
     }
-  })
+  }) */
 
   const clearEmptyState = () => {
     const emptyState = document.querySelector('messages .empty-state')
@@ -466,6 +488,7 @@ async function Messages (props) {
         try {
           const response = await fetch(image.src)
           const blob = await response.blob()
+          let type = 'image/generic'
 
           if (!blob) {
             console.warn('Something went wrong reading this image')
@@ -474,9 +497,12 @@ async function Messages (props) {
 
           const buf = await blob.arrayBuffer()
           const sizeBeforeCompression = buf.byteLength
-          if (blob.type === 'text/xml') blob.type = 'image/generic'
 
-          const compress = new Compressor({ type: blob.type || 'octet-stream' })
+          if (blob.type && blob.type !== 'text/xml') {
+            type = blob.type
+          }
+
+          const compress = new Compressor({ type })
           const { bytes } = await compress.from(buf)
           const sizeAfterCompression = bytes.byteLength
 
@@ -489,13 +515,13 @@ async function Messages (props) {
 
           if (Mb > 1) { // TODO(@heapwolf): could make this a limit in the channel settings.
             // TODO(@heapwolf): put this into the UI, maybe even replace the image with it.
-            alert(`Image too big (${Mb}Mb), you\'ll spam the network and get rate limited.`)
+            console.log(`Image too big (${Mb}Mb), you\'ll spam the network and get rate limited.`)
             return
           }
 
           message = bytes
 
-          opts.meta.mime = blob.type
+          opts.meta.mime = type
           opts.meta.hash = await sha256(bytes)
           opts.meta.ts = Date.now()
           opts.meta.name = response.url.split(/\/|\\/).pop()

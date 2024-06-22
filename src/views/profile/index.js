@@ -93,7 +93,7 @@ function PeerMetrics (props) {
         ),
         tr(
           td('Rejected'),
-          td([props.i.REJECTED, 'N/A'].join(':'))
+          td([props.i.DROPPED, 'N/A'].join(':'))
         )
       )
     )

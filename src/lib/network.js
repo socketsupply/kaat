@@ -55,6 +55,7 @@ const network = async db => {
       status: 'Hello, World!',
       peerId: dataPeer.peerId,
       clock: 0,
+      origin: true,
       publicKey: b64pk
     })
 
@@ -96,10 +97,23 @@ const network = async db => {
     socket = await createNetwork(dataPeer)
   }
 
+    const pk = dataPeer.signingKeys.publicKey
+    const b64pk = Buffer.from(pk).toString('base64')
+
+    await db.claims.put(b64pk, {
+      ctime: Date.now(),
+      nick: Math.random().toString(16).slice(2, 8),
+      status: 'Hello, World!',
+      peerId: dataPeer.peerId,
+      clock: 0,
+      origin: true,
+      publicKey: b64pk
+    })
+
   window.socket = socket
 
   globalThis.addEventListener('online', () => {
-    consoe.log('ONLINE')
+    if (socket) socket.reconnect()
   })
 
   globalThis.addEventListener('offline', () => {
