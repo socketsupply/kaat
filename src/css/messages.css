@@ -1,3 +1,7 @@
+#sidebar-toggle[open="true"] + #messages {
+  width: calc(100% - 280px);
+}
+
 #messages {
   display: grid;
   grid-template-rows: auto 1fr;
