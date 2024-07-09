@@ -174,7 +174,7 @@ class Stream {
     }
   }
 
-  startAnalyzing() {
+  startAnalyzing () {
     const analyzeFrame = () => {
       this.analyze()
       this.animationFrameId = requestAnimationFrame(analyzeFrame)
@@ -183,7 +183,7 @@ class Stream {
     this.animationFrameId = requestAnimationFrame(analyzeFrame)
   }
 
-  stopAnalyzing() {
+  stopAnalyzing () {
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId)
       this.animationFrameId = null

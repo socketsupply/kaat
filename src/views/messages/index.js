@@ -391,7 +391,7 @@ async function Messages (props) {
     const subcluster = net.subclusters[dataPeer.channelId]
 
     if (subcluster) await subcluster.emit('claim', claim, opts)
-  }, 6e3)
+  }, 6e4)
 
   //
   // Handle output from the LLM and input from the user.
