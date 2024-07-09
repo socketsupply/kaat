@@ -3,13 +3,46 @@ import process from 'socket:process'
 import { Register } from '../../lib/component.js'
 import { Spring } from '../../lib/spring.js'
 
+function PeerList (props) {
+  const peers = []
+
+  if (!props.net?.subclusters) return b()
+
+  for (const [scid, subcluster] of Object.entries(props.net.subclusters)) {
+    for (const peer of [...subcluster.peers.values()]) {
+      peers.push(
+        tr(
+          td([peer.peerId.slice(0, 6), peer.peerId.slice(-2)].join('..')),
+          td([peer.address, peer.port].join(':')),
+          td([scid.slice(0, 6), scid.slice(-2)].join('..'))
+        )
+      )
+    }
+  }
+
+  return table(
+    thead(
+      tr(
+        th('Id'),
+        th('Address:Port'),
+        th('Subcluster')
+      )
+    ),
+    tbody(
+      ...peers
+    )
+  )
+}
+
+PeerList = Register(PeerList)
+
 function PeerInfo (props) {
   let shortPeerId = 'Working...'
   let combinedAddress = 'Working...'
   let natType = 'Working...'
 
   if (props.peerId) {
-    shortPeerId = props.peerId?.slice(0, 6) + '..' + props.peerId?.slice(-4)
+    shortPeerId = props.peerId?.slice(0, 6) + '..' + props.peerId?.slice(-2)
     combinedAddress = `${props?.address}:${props?.port}`
     natType = props.natName
   }
@@ -28,7 +61,7 @@ function PeerInfo (props) {
           td(shortPeerId)
         ),
         tr(
-          td('Address'),
+          td('Address:Port'),
           td(combinedAddress)
         ),
         tr(
@@ -50,8 +83,8 @@ function PeerMetrics (props) {
     table(
       thead(
         tr(
-          th('Property'),
-          th('Value In:Out')
+          th('Packet'),
+          th('In:Out')
         )
       ),
       tbody(
@@ -92,7 +125,7 @@ function PeerMetrics (props) {
           td([props.i[8], props.o[8]].join(':'))
         ),
         tr(
-          td('Rejected'),
+          td('Dropped'),
           td([props.i.DROPPED, 'N/A'].join(':'))
         )
       )
@@ -124,7 +157,7 @@ async function Profile (props) {
   net.socket.on('#data', async () => {
     const elPeerMetrics = document.querySelector('peer-metrics')
     metrics = await net.socket.getMetrics()
-    elPeerMetrics.render(metrics)
+    elPeerMetrics?.render(metrics)
   })
 
   const { data: dataPeer } = await db.state.get('peer')
@@ -249,7 +282,8 @@ async function Profile (props) {
         })
       ),
       PeerInfo({ id: 'peer-info' }),
-      PeerMetrics({ id: 'props' })
+      PeerMetrics({ id: 'props' }),
+      PeerList({ id: 'peer-list', net })
     )
   ]
 }

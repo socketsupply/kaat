@@ -1,12 +1,14 @@
 import path from 'socket:path'
+import process from 'socket:process'
 import { sha256 } from 'socket:network'
-import { LLM } from 'socket:ai'
+// import { LLM } from 'socket:ai'
 
 import { Compressor } from '../../lib/compressor.js'
 import { Register } from '../../lib/component.js'
 import { Spring } from '../../lib/spring.js'
 import { Avatar } from '../../components/avatar.js'
 import { RelativeTime } from '../../components/relative-time.js'
+import { Modal } from '../../components/modal.js'
 
 let signal // an interval that advertises we are online
 
@@ -88,6 +90,19 @@ async function VirtualMessages (props) {
 
 VirtualMessages = Register(VirtualMessages)
 
+const fitMessages = () => {
+  const remainingWidth = (100 - (
+    sidebarWidth * progress / window.innerWidth * 100
+  )).toFixed(2)
+  this.el.style.width = `calc(${remainingWidth}vw)`
+}
+
+let resizeEvent = () => {}
+
+window.addEventListener('resize', e => {
+  resizeEvent()
+})
+
 async function Messages (props) {
   const { net, db, isMobile } = props
 
@@ -100,6 +115,7 @@ async function Messages (props) {
 
   let isPanning = false
   let lastContent = null
+  let sidebarWidth = 280
 
   //
   // Enable some fun interactions on the messages element
@@ -109,9 +125,19 @@ async function Messages (props) {
     axis: 'X',
     absolute: true,
     position: function (pos) {
-      const progress = pos / 280
+      const progress = pos / sidebarWidth
       const scale = 0.95 + 0.05 * progress
       const opacity = 0.0 + 1 * progress
+
+      if (!isMobile) {
+        resizeEvent = () => {
+          const remainingWidth = (100 - (
+            sidebarWidth * progress / window.innerWidth * 100
+          )).toFixed(2)
+          this.el.style.width = `calc(${remainingWidth}vw)`
+        }
+        resizeEvent()
+      }
 
       if (!elSidebar) elSidebar = document.getElementById('sidebar')
       elSidebar.style.transform = `scale(${Math.min(scale, 1)})`
@@ -325,6 +351,16 @@ async function Messages (props) {
 
   net.subclusters[dataPeer.channelId].on('message', onMessage)
   net.subclusters[dataPeer.channelId].on('claim', onClaim)
+
+  const elPeerList = document.getElementById('peer-list')
+
+  net.subclusters[dataPeer.channelId].on('#join', (...args) => {
+    elPeerList.render()
+  })
+
+  net.subclusters[dataPeer.channelId].on('#connection', (...args) => {
+    elPeerList.render()
+  })
 
   clearInterval(signal)
 
@@ -619,6 +655,16 @@ async function Messages (props) {
       onSendPress()
     }
 
+    if (el = match('#open-audio-streams')) {
+      const elModalAudio = document.getElementById('audio-streams')
+
+      if (elModalAudio.classList.contains('open')) {
+        elModalAudio.close()
+      } else {
+        elModalAudio.open()
+      }
+    }
+
     if (el = match('img')) {
       const elPreview = document.querySelector('preview')
       elPreview.value = el.src
@@ -662,8 +708,13 @@ async function Messages (props) {
   // and the sooner it will fire.
   //
   return [
-    header({ class: 'primary draggable' },
-      span({ class: 'title' }, '#', dataChannel.label)
+    header({ class: 'primary draggable', onclick },
+      span({ class: 'title' }, '#', dataChannel.label),
+      button({ id: 'open-audio-streams' },
+        svg({ class: 'app-icon' },
+          use({ 'xlink:href': '#talk-icon' })
+        )
+      )
     ),
 
     div({ class: 'content' },

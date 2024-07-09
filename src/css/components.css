@@ -327,4 +327,25 @@ preview.open .image {
 preview.close .image {
   animation: swellOut 0.3s forwards ease;
   pointer-events: none;
-} 
+}
+
+/* Avatar */
+avatar {
+  display: grid;
+  position: relative;
+  justify-content: center;
+
+  .icon {
+    height: 34px;
+    width: 34px;
+    position: relative;
+    border: 1px solid var(--x-primary);
+    border-radius: 99em;
+    padding: 4px;
+  }
+
+  .icon.large {
+    height: 64px;
+    width: 64px;
+  }
+}

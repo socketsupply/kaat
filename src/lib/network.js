@@ -43,7 +43,7 @@ const network = async db => {
     dataPeer = {
       peerId: await Encryption.createId(),
       signingKeys: await Encryption.createKeyPair(),
-      clusterId: await Encryption.createClusterId('kaat'),
+      clusterId: await Encryption.createClusterId('kaat-development'),
     }
 
     const pk = dataPeer.signingKeys.publicKey
@@ -77,6 +77,11 @@ const network = async db => {
     //
     let channels = [
       {
+        accessToken: 'dev',
+        label: 'dev',
+        ...modelDefaults
+      } /* ,
+      {
         accessToken: crypto.randomUUID(),
         label: 'work',
         ...modelDefaults
@@ -85,7 +90,7 @@ const network = async db => {
         accessToken: crypto.randomUUID(),
         label: 'fun',
         ...modelDefaults
-      }
+      } */
     ]
 
     for (const channel of channels) {
@@ -97,27 +102,17 @@ const network = async db => {
     socket = await createNetwork(dataPeer)
   }
 
-    const pk = dataPeer.signingKeys.publicKey
-    const b64pk = Buffer.from(pk).toString('base64')
-
-    await db.claims.put(b64pk, {
-      ctime: Date.now(),
-      nick: Math.random().toString(16).slice(2, 8),
-      status: 'Hello, World!',
-      peerId: dataPeer.peerId,
-      clock: 0,
-      origin: true,
-      publicKey: b64pk
-    })
-
   window.socket = socket
+
+  window.addEventListener('focus', () => {
+    if (socket) socket.reconnect()
+  })
 
   globalThis.addEventListener('online', () => {
     if (socket) socket.reconnect()
   })
 
   globalThis.addEventListener('offline', () => {
-    console.log('OFFLINE')
   })
 
   if (Object.keys(subclusters).length === 0) {
@@ -159,17 +154,35 @@ const network = async db => {
   // Don't listen to debug in production, it can strain the CPU.
   //
   socket.on('#debug', (pid, str, ...args) => {
+    /* pid = pid.slice(0, 6)
+
+    if (str.includes('<- STREAM')) {
+      console.log(pid, str, ...args)
+    }
+
     if (str.includes('DROP')) {
-      console.log(str, ...args)
+      console.log(pid, str, ...args)
+    }
+
+    if (str.includes('PONG')) {
+      console.log(pid, str, ...args)
     }
 
     if (str.includes('JOIN')) {
-      console.log(str, ...args)
+      console.log(pid, str, ...args)
     }
 
     if (str.includes('INTRO')) {
-      console.log(str, ...args)
+      console.log(pid, str, ...args)
     }
+
+    if (str.includes('CONNECT')) {
+      console.log(pid, str, ...args)
+    }
+
+    if (str.includes('WRITE')) {
+      console.log(pid, str, ...args)
+    } */
   })
 
   socket.on('#connection', (packet, peer) => {
@@ -177,6 +190,8 @@ const network = async db => {
     // initiated by one side. in this case we simply
     // select the lexicographically higher peerId to
     // kick-off the syncing protocol.
+    console.log(`-> SYNC (peerId=${peer.peerId.slice(0, 6)}, address=${peer.address}:${peer.port})`)
+
     if (peer.lastSync > Date.now() - 6000) {
       socket.sync(peer.peerId)
       peer.lastSync = Date.now()

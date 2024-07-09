@@ -1,6 +1,8 @@
 import { Register } from '../lib/component.js'
 import { Modal } from '../components/modal.js'
 import { Text } from '../components/text.js'
+import { Avatar } from '../components/avatar.js'
+import Buffer from 'socket:buffer'
 
 //
 // TODO(@heapwolf): a bit redundant, DRY these out

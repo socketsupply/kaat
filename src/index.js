@@ -8,8 +8,10 @@ import { createRoot } from './lib/component.js'
 import { Messages } from './views/messages/index.js'
 import { Profile } from './views/profile/index.js'
 import { Sidebar } from './views/sidebar/index.js'
+import { ModalAudioStreams } from './views/streams/audio.js'
 import { ModelManageChannel, ModelCreateChannel } from './views/channel-modals.js'
 import { Preview } from './components/preview.js'
+import { Modal } from '../components/modal.js'
 
 //
 // The main component, this is the program entry point.
@@ -212,6 +214,7 @@ async function App () {
       await Sidebar({ id: 'sidebar', class: 'view', ...context }),
       ModelManageChannel(),
       ModelCreateChannel(),
+      ModalAudioStreams({ ...context }),
       Preview()
     )
   ]

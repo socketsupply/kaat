@@ -119,6 +119,7 @@ export class Spring {
    * @param {Function} [fn] - Optional callback function.
    */
   onDuring (event, fn) {
+    if (!event.buttons && event.type === 'mousemove') return
     if (!this.isInteractive || !this.allowInteraction) return
 
     const now = Date.now()
@@ -282,3 +283,4 @@ export class Spring {
     }
   }
 }
+

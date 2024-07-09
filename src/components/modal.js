@@ -96,9 +96,19 @@ function Modal (props, ...children) {
           )
         ),
         main({ class: 'content' }, ...children),
-        footer(buttons.map(config =>
-          Button({ class: config.class, data: { value: config.value, event: config.event } }, config.label)
-        ))
+        footer(buttons.map(config => {
+          const data = {}
+          if (config.value) data.value = config.value
+          if (config.event) data.event = config.event
+
+          return Button(
+            {
+              class: config.class || 'modal-button',
+              data
+            },
+            config.label
+          )
+        }))
       )
     )
   )

@@ -29,8 +29,10 @@ function Avatar (props) {
     return svg
   }
 
+  const classNames = ['icon', ...(props?.classNames || [])].join(' ')
+
   return (
-    div({ class: 'icon', style: { backgroundColor: `var(--x-window-${bg})` } },
+    div({ class: classNames, style: { backgroundColor: `var(--x-window-${bg})` } },
       createIcon(props.nick)
     )
   )

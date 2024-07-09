@@ -119,11 +119,13 @@ async function Channels (props) {
 
     switch (el.dataset.event) {
       case 'manage-channel': {
+        event.preventDefault()
         this.manageChannel(el.dataset.value)
         break
       }
 
       case 'activate-channel': {
+        event.preventDefault()
         activateChannel(el)
       }
     }
