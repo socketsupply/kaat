@@ -9,7 +9,9 @@
  *   - Components can be async/await, even async generators
  *   - Components return arrays or trees of dom nodes
  *   - Props are a zero cost abstraction
- *   - Insde the component, 'this' is the dom element.
+ *   - Enforce React's one component export per file rule
+ *   - Enforance React style component grouping/namespacing
+ *   - Insde the component, 'this' is the dom element
  *
  * Usage:
  *
@@ -24,8 +26,6 @@
  *   return div(`count=${this.state.count}`, onclick)
  * }
  *
- * CounterA = Register(CounterA)
- *
  * async function CounterB (props, ...children) {
  *   await sleep(16) // do something async if you want
  *
@@ -35,8 +35,6 @@
  *     )
  *   )
  * }
- *
- * CounterB = Register(CounterB)
  *
  * async function App () {
  *   let count = 0
@@ -56,8 +54,13 @@
  *   )
  * }
  *
+ * register({ CounterA, CounterB })
  * createRoot(App, document.body)
  * ```
+ */
+
+/**
+ * @typedef {('a'|'abbr'|'address'|'area'|'article'|'aside'|'audio'|'b'|'base'|'bdi'|'bdo'|'blockquote'|'body'|'br'|'button'|'canvas'|'caption'|'cite'|'code'|'col'|'colgroup'|'data'|'datalist'|'dd'|'del'|'details'|'dfn'|'dialog'|'div'|'dl'|'dt'|'em'|'embed'|'fieldset'|'figcaption'|'figure'|'footer'|'form'|'h1'|'h2'|'h3'|'h4'|'h5'|'h6'|'head'|'header'|'hr'|'html'|'i'|'iframe'|'img'|'input'|'ins'|'kbd'|'label'|'legend'|'li'|'link'|'main'|'map'|'mark'|'meta'|'meter'|'nav'|'noscript'|'object'|'ol'|'optgroup'|'option'|'output'|'p'|'param'|'picture'|'pre'|'progress'|'q'|'rp'|'rt'|'ruby'|'s'|'samp'|'script'|'section'|'select'|'small'|'source'|'span'|'strong'|'style'|'sub'|'summary'|'sup'|'svg'|'table'|'tbody'|'td'|'template'|'textarea'|'tfoot'|'th'|'thead'|'time'|'title'|'tr'|'track'|'u'|'ul'|'use'|'video'|'wbr')} HTMLTag
  */
 
 /**
@@ -135,10 +138,10 @@ const observables = []
 
 /**
  * Registers a component function.
- * @param {Function} Fn - The component function to register.
- * @returns {Function} - The registered component function wrapped in a Proxy.
+ * @param {Object} obj - An object of components to register.
+ * @returns {function}
  */
-export function Register (Fn) {
+export function register (Fn) {
   const collect = (el, tree) => [tree].flat().forEach(node => el.appendChild(node))
   const hyphenate = (name) => name.match(/[A-Z][a-z0-9]*/g).join('-').toLowerCase()
   const children = (args) => args.flat().filter(a => a instanceof globalThis.Node)
@@ -154,8 +157,9 @@ export function Register (Fn) {
     apply: (target, self, args) => {
       const el = createElement(hyphenate(Fn.name), ...args)
       const id = args[0]?.id || el.id || Fn.name
-      if (!Register.state[id]) Register.state[id] = {}
-      el.state = new Proxy(Register.state[id], { // re-render when state is updated.
+
+      if (!register.state[id]) register.state[id] = {}
+      el.state = new Proxy(register.state[id], { // re-render when state is updated.
         set (target, property, value) {
           let isUpdate = false
           if (property in target) isUpdate = true
@@ -176,7 +180,7 @@ export function Register (Fn) {
       }
 
       el.off = (s, fn) => el.removeEventListener(s, fn)
-      el.emit = (s, detail) => el.dispatchEvent(new CustomEvent(eventName, { detail }))
+      el.emit = (s, detail) => el.dispatchEvent(new CustomEvent(s, { detail }))
 
       function apply (args) {
         let result
@@ -208,23 +212,23 @@ export function Register (Fn) {
   return globalThis[Fn.name]
 }
 
-Register.state = {}
+register.state = {}
 
 /**
  * Creates the root component and appends it to the specified element.
- * @param {Function} fn - The root component function.
+ * @param {Function} App - The root component function.
  * @param {HTMLElement} el - The element to append the root component to.
  * @returns {Promise<void>}
  */
-export async function createRoot (Fn, el) {
-  const fn = Register(Fn)
+export async function createRoot (App, el) {
+  const app = register(App)
   let root
 
   try {
-    root = await fn()
+    root = await app()
     el.appendChild(root)
   } catch (err) {
-    throw err
+    throw new Error(err.message)
   }
 
   const processNodes = (nodes, eventType) => {

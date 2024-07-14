@@ -1,14 +1,13 @@
 import path from 'socket:path'
-import process from 'socket:process'
 import { sha256 } from 'socket:network'
 // import { LLM } from 'socket:ai'
 
 import { Compressor } from '../../lib/compressor.js'
-import { Register } from '../../lib/component.js'
+import { register } from '../../lib/component.js'
 import { Spring } from '../../lib/spring.js'
-import { Avatar } from '../../components/avatar.js'
-import { RelativeTime } from '../../components/relative-time.js'
-import { Modal } from '../../components/modal.js'
+
+import Avatar from '../../components/avatar.js'
+import RelativeTime from '../../components/relative-time.js'
 
 let signal // an interval that advertises we are online
 
@@ -16,7 +15,7 @@ let signal // an interval that advertises we are online
 // Message and VirtualMessages render and rerender unencypted messages.
 //
 async function Message (props = {}) {
-  if (!props.messageId) return
+  if (!props.messageId) return span()
 
   this.id = props.messageId
   if (props.mine) this.classList.add('mine')
@@ -44,11 +43,11 @@ async function Message (props = {}) {
   ]
 }
 
-Message = Register(Message)
+Messages.Message = register(Message)
 
 async function VirtualMessages (props) {
   const messages = props.rows.filter(Boolean)
-  let rows = await Promise.all(messages.map(Message))
+  let rows = await Promise.all(messages.map(Messages.Message))
 
   const onclick = (event, match) => {
     const el = match('[data-event]')
@@ -88,7 +87,7 @@ async function VirtualMessages (props) {
   )
 }
 
-VirtualMessages = Register(VirtualMessages)
+Messages.VirtualMessages = register(VirtualMessages)
 
 const fitMessages = () => {
   const remainingWidth = (100 - (
@@ -309,7 +308,7 @@ async function Messages (props) {
 
     await db[dataPeer.channelId].put([message.ts, message.messageId], message)
 
-    const child = await Message(await prepareMessageForReading(message))
+    const child = await Messages.Message(await prepareMessageForReading(message))
     let parent = elChannels.state[dataPeer.channelId]
 
     if (!parent) { // no prior channel switching, fall back
@@ -394,15 +393,15 @@ async function Messages (props) {
   }, 6e4)
 
   //
+  // An example of how you might create an LLM that can partcipate in the chat.
+  //
+  /* const llm = new LLM(dataChannel)
+
+  //
   // Handle output from the LLM and input from the user.
   //
   let elCurrentMessage = null
   let currentMessageStream = ''
-
-  //
-  // An example of how you might create an LLM that can partcipate in the chat.
-  //
-  /* const llm = new LLM(dataChannel)
 
   llm.on('end', async () => {
     const { data: dataPeer } = await db.state.get('peer')
@@ -709,7 +708,7 @@ async function Messages (props) {
   //
   return [
     header({ class: 'primary draggable', onclick },
-      span({ class: 'title' }, '#', dataChannel.label),
+      span({ class: 'title' }, '#', dataChannel.label, ' - ', em({ class: 'state' }, 'offline')),
       button({ id: 'open-audio-streams' },
         svg({ class: 'app-icon' },
           use({ 'xlink:href': '#talk-icon' })
@@ -721,7 +720,7 @@ async function Messages (props) {
       //
       // The thing that actually handles rendering the messages
       //
-      await VirtualMessages({ data: { id: dataPeer.channelId }, rows }),
+      await Messages.VirtualMessages({ data: { id: dataPeer.channelId }, rows }),
 
       //
       // The input area
@@ -741,5 +740,4 @@ async function Messages (props) {
   ]
 }
 
-Messages = Register(Messages)
-export { Messages }
+export default register(Messages)

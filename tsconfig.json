@@ -9,11 +9,11 @@
     "build"
   ],
   "compilerOptions": {
+    "target": "ES2022",
     "moduleResolution": "node",
-    "target": "es2022",
     "module": "es2022",
     "lib": ["es2022", "dom"],
-    "types": ["@socketsupply/socket"],
+    "types": ["@socketsupply/socket", "node"],
 
     "removeComments": false,
 
@@ -29,7 +29,7 @@
     "declaration": true,
     "declarationMap": true,
 
-    "baseUrl": ".",
+    "baseUrl": "socket:",
 
     "paths": {
 

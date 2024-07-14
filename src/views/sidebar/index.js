@@ -1,10 +1,6 @@
-import process from 'socket:process'
-
 import Indexed from '@socketsupply/indexed'
 
-import { Register } from '../../lib/component.js'
-import { Switch } from '../../components/switch.js'
-import { Group } from '../../components/group.js'
+import { register } from '../../lib/component.js'
 
 async function Channels (props) {
   const {
@@ -162,7 +158,7 @@ async function Channels (props) {
   }))
 }
 
-Channels = Register(Channels)
+Sidebar.Channels = register(Channels)
 
 async function Sidebar (props) {
   const {
@@ -187,10 +183,9 @@ async function Sidebar (props) {
       )
     ),
     div({ class: 'content' },
-      await Channels({ id: 'channels', db, net, isMobile })
+      await Sidebar.Channels({ id: 'channels', db, net, isMobile })
     )
   ]
 }
 
-Sidebar = Register(Sidebar)
-export { Sidebar }
+export default register(Sidebar)

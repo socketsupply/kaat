@@ -1,154 +1,116 @@
-import { Register } from '../../lib/component.js'
-import { Modal } from '../../components/modal.js'
-import process from 'socket:process'
+import { register } from '../../lib/component.js'
+import Modal from '../../components/modal.js'
 
 class Stream {
   constructor (opts) {
-    Object.assign(this, opts)
+    this.sampleRate = 44100 / 4
 
-    const AudioContext = window.AudioContext || window.webkitAudioContext
-
-    this.audioContext = new AudioContext()
+    this.audioContext = new globalThis.AudioContext({ sampleRate: this.sampleRate })
     this.analyser = this.audioContext.createAnalyser()
+    this.gainNode = this.audioContext.createGain()
+    this.pcmNode = null
     this.onQueue = null
     this.onData = null
+    this.onBuffer = null
     this.onAudioLevelChange = null
     this.mediaRecorder = null
     this.mediaStream = null
+    this.sequenceNumber = 0
+    this.seqRecv = 0
+    this.receivedPackets = []
 
     // remote only
     this.queue = []
-    this.isProcessingQueue = false
+    this.isLocal = false
     this.sourceBuffer = null
     this.audioElement = null
+
+    this.analyser.fftSize = 4096
+    Object.assign(this, opts)
+
+    this.stats = {
+      created: 0,
+      consumed: 0
+    }
   }
 
-  async start (ms = 1) {
+  async start () {
     if (this.isLocal) {
+      if (this.mediaStream) return // don't start twice.
+
+      await this.audioContext.audioWorklet.addModule('views/streams/pcm.js')
+      this.pcmNode = new AudioWorkletNode(this.audioContext, 'pcm-processor')
+
       this.mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: true,
         video: false
       })
 
-      this.mediaRecorder = new MediaRecorder(this.mediaStream, {
-        audioBitsPerSecond: 64000 / 2, // 64k bps or 32kbps
-        mimeType: 'audio/mp4'
-      })
-
-      this.mediaRecorder.ondataavailable = (event) => {
-        this.analyze()
-        if (this.onData) this.onData(event.data)
-      }
-
       const source = this.audioContext.createMediaStreamSource(this.mediaStream)
+      source.connect(this.gainNode)
       source.connect(this.analyser)
-      this.analyser.fftSize = 256
+      source.connect(this.pcmNode)
 
-      this.mediaRecorder.start(ms)
+      // this.pcmNode.connect(this.audioContext.destination)
+      // if you want to hear your local stream
+      // this.gainNode.connect(this.audioContext.destination)
+
+      this.pcmNode.port.onmessage = event => this.onData(event.data)
+
+      this.startAnalyzingLocalNode()
     } else {
-      this.audioElement = document.createElement('audio')
-      this.audioElement.playsInline = true
-      this.audioElement.disableRemotePlayback = true
-
-      let MediaSource = globalThis.MediaSource
-
-      if (process.platform === 'ios') {
-        MediaSource = globalThis.ManagedMediaSource
-      }
-
-      this.mediaSource = new MediaSource()
-      this.mediaStream = new MediaStream()
-
-      this.mediaStream.controls = false
-
-      await new Promise(resolve => {
-        this.audioElement.src = URL.createObjectURL(this.mediaSource)
-        this.mediaSource.addEventListener('sourceopen', () => {
-          this.sourceBuffer = this.mediaSource.addSourceBuffer('audio/mp4')
-          this.sourceBuffer.addEventListener('updateend', () => this.dequeue(), { once: true })
-          resolve()
-        }, { once: true })
-      })
-
-      const source = this.audioContext.createMediaElementSource(this.audioElement)
-      source.connect(this.analyser)
-      source.connect(this.audioContext.destination) // output to the speakers
-      this.analyser.fftSize = 64
-
-      this.audioElement.addEventListener('play', () => {
-        this.startAnalyzing()
-      })
-
-      this.audioElement.addEventListener('pause', () => {
-        this.stopAnalyzing()
-      })
-
-      this.audioElement.addEventListener('canplay', () => {
-        this.audioElement.play().catch(err => {})
-      })
-
-      this.audioElement.addEventListener('timeupdate', () => {
-        // console.log(`Remote Stream Current time: ${this.audioElement.currentTime}`);
-      })
-
-      // this.audioElement.play().catch(error => {
-      //   console.error('Error playing audio:', error);
-      // })
+      this.startAnalyzingRemoteNode()
     }
   }
 
   stop () {
-    if (this.mediaStream) {
-      this.mediaStream.getTracks().forEach(track => track.stop())
-    }
-
-    if (this.isLocal && this.mediaRecorder) {
-      this.mediaRecorder.stop()
-      this.mediaRecorder.ondataavailable = null
-      this.mediaRecorder.onstop = null
-    }
+    if (!this.animationFrameId) return
+    cancelAnimationFrame(this.animationFrameId)
+    this.animationFrameId = null
   }
 
-  dequeue () {
+  async dequeue () {
     if (this.audioContext.state === 'suspended') {
-      this.audioContext.resume()
+      await this.audioContext.resume()
     }
 
-    if (this.queue.length && this.sourceBuffer && !this.sourceBuffer.updating) {
+    if (this.queue.length) {
       const chunk = this.queue.shift()
-      this.sourceBuffer.appendBuffer(chunk)
-      this.analyze()
-    }
 
-    if (this.queue.length && this.sourceBuffer) {
-      this.sourceBuffer.addEventListener('updateend', () => this.dequeue(), { once: true })
-      return
-    }
+      const audioBuffer = this.audioContext.createBuffer(1, chunk.length, this.sampleRate)
+      const channelData = audioBuffer.getChannelData(0)
 
-    this.isProcessingQueue = false
+      // Convert Int16Array to Float32Array for AudioBuffer
+      for (let i = 0; i < chunk.length; i++) {
+        channelData[i] = chunk[i] / 32768 // Normalize 16-bit PCM data
+      }
+
+      try {
+        const bufferSource = this.audioContext.createBufferSource()
+        bufferSource.buffer = audioBuffer
+        bufferSource.onended = () => this.dequeue()
+        bufferSource.connect(this.gainNode)
+        bufferSource.connect(this.analyser)
+        this.gainNode.connect(this.audioContext.destination)
+        bufferSource.start()
+      } catch (error) {
+        console.error('Error during audio playback setup:', error)
+      }
+    }
   }
 
-  async enqueue (ab) {
-    if (this.onQueue) this.onQueue()
+  async enqueue (raw) {
+    const uint8Array = new Uint8Array(raw)
+    const view = new DataView(uint8Array.buffer)
 
-    if (this.sourceBuffer && !this.sourceBuffer.updating) {
-      this.sourceBuffer.appendBuffer(ab)
-      // console.log(`Appending buffer=${ab.byteLength}, buf=${this.audioElement.buffered.length}, state=${this.audioElement.readyState}, level=${this.inputLevel}, id=${this.id})`)
+    const seq = view.getUint32(0, true)
+    if (seq < this.seqRecv) return
+    this.seqRecv = seq
 
-      await new Promise(resolve => {
-        this.sourceBuffer.addEventListener('updateend', resolve, { once: true })
-      })
+    const data = new Int16Array(uint8Array.buffer.slice(4))
 
-      this.audioElement.play()
-      this.analyze()
-    } else {
-      this.queue.push(ab)
-    }
-
-    if (!this.isProcessingQueue) {
-      this.isProcessingQueue = true
-      this.dequeue()
-    }
+    this.queue.push(data)
+    this.dequeue()
   }
 
   analyze () {
@@ -170,11 +132,15 @@ class Stream {
     this.inputLevel = Math.min(1, average / 128) // Normalize input level to 0-1
 
     if (this.onAudioLevelChange) {
-      this.onAudioLevelChange(this.inputLevel)
+      this.onAudioLevelChange(this.inputLevel, sum)
     }
   }
 
-  startAnalyzing () {
+  startAnalyzingRemoteNode () {
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId)
+    }
+
     const analyzeFrame = () => {
       this.analyze()
       this.animationFrameId = requestAnimationFrame(analyzeFrame)
@@ -183,44 +149,61 @@ class Stream {
     this.animationFrameId = requestAnimationFrame(analyzeFrame)
   }
 
-  stopAnalyzing () {
+  startAnalyzingLocalNode () {
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId)
-      this.animationFrameId = null
     }
+
+    const analyzeFrame = () => {
+      const bufferLength = this.analyser.frequencyBinCount
+      const dataArray = new Uint8Array(bufferLength)
+
+      if (!globalThis.navigator.onLine) return
+      this.analyze()
+      this.analyser.getByteTimeDomainData(dataArray)
+      this.animationFrameId = requestAnimationFrame(analyzeFrame)
+    }
+
+    this.animationFrameId = requestAnimationFrame(analyzeFrame)
+  }
+
+  setVolume (value) {
+    this.gainNode.gain.value = value
   }
 }
 
 async function AudioStream (props) {
-  const timeout = null
-
-  props.stream.onAudioLevelChange = level => {
+  props.stream.onAudioLevelChange = (level) => {
     const borderWidth = 1 + level * 29
     this.firstElementChild.firstElementChild.style.outlineWidth = `${borderWidth}px`
+  }
+
+  props.stream.onBuffer = () => {
   }
 
   return [
     await Avatar({ ...props.stream, classNames: ['large'] }),
     div({ class: 'author' },
-      div({ class: 'nick' }, '@', props.stream.nick)
+      div({ class: 'nick' }, '@', props.stream.nick),
+      div({ class: 'bytes' })
     )
   ]
 }
 
-AudioStream = Register(AudioStream)
+AudioStreams.AudioStream = register(AudioStream)
 
 async function AudioGrid (props) {
   return props.streams.map(stream => {
-    return AudioStream({ id: stream.id, stream })
+    return AudioStreams.AudioStream({ id: stream.id, stream })
   })
 }
 
-AudioGrid = Register(AudioGrid)
+AudioStreams.AudioGrid = register(AudioGrid)
 
 //
 // This is not re-rendered.
 //
-async function ModalAudioStreams (props) {
+async function AudioStreams (props) {
   const {
     net,
     db
@@ -232,7 +215,11 @@ async function ModalAudioStreams (props) {
   const localStream = new Stream({ isLocal: true, id: net.socket.peerId })
   const remoteStreams = {}
 
-  window.remoteStreams = remoteStreams
+  // @ts-ignore
+  window.streams = {
+    localStream,
+    remoteStreams
+  }
 
   const { data: dataPeer } = await db.state.get('peer')
   const pk = Buffer.from(dataPeer.signingKeys.publicKey).toString('base64')
@@ -257,6 +244,7 @@ async function ModalAudioStreams (props) {
     const { data: dataClaim } = await db.claims.get(pk)
     const stream = new Stream({ id: pk, nick: dataClaim?.nick })
     remoteStreams[pk] = stream
+    stream.setVolume(1)
     await stream.start()
 
     // recalibrate grid
@@ -284,11 +272,24 @@ async function ModalAudioStreams (props) {
 
     const partyName = [cid, dataPeer.channelId].join('')
 
-    localStream.onData = async data => {
-      if (data.size <= 0) return
+    localStream.onData = async (data) => {
+      const sequenceNumber = localStream.sequenceNumber++
+      const int16Array = new Int16Array(data) // Ensure data is Int16Array
 
-      const buf = await data.arrayBuffer()
-      await subcluster.stream(partyName, buf)
+      // Create a packet with 4 extra bytes for the sequence number
+      const packet = new Uint8Array(int16Array.length * 2 + 4) // Each Int16 takes 2 bytes
+      const view = new DataView(packet.buffer)
+
+      // Set the sequence number in the first 4 bytes
+      view.setUint32(0, sequenceNumber, true)
+
+      // Copy the Int16Array data into the packet after the sequence number
+      packet.set(new Uint8Array(int16Array.buffer), 4)
+
+      localStream.stats.created += int16Array.byteLength
+
+      // Send the packet over the network
+      await subcluster.stream(partyName, packet)
     }
 
     subcluster.on(partyName, async (value, packet) => {
@@ -300,14 +301,16 @@ async function ModalAudioStreams (props) {
         stream = await createRemoteStream(pk)
       }
 
-      const buf = value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength)
-      stream.enqueue(buf)
+      stream.stats.consumed += value.byteLength
+
+      stream.enqueue(Uint8Array.from(value))
     })
 
+    localStream.setVolume(1)
     await localStream.start()
   }
 
-  const onclick = (event, match) => {
+  const onclick = (_, match) => {
     const el = match('[data-event]')
 
     if (el?.dataset.event === 'stop-stream') {
@@ -329,10 +332,8 @@ async function ModalAudioStreams (props) {
       ],
       onclick
     },
-    await AudioGrid({ id: 'audio-grid', streams: [localStream, ...Object.values(remoteStreams)] })
+    await AudioStreams.AudioGrid({ id: 'audio-grid', streams: [localStream, ...Object.values(remoteStreams)] })
   )
 }
 
-ModalAudioStreams = Register(ModalAudioStreams)
-
-export { ModalAudioStreams }
+export default register(AudioStreams)

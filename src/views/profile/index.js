@@ -1,7 +1,7 @@
-import process from 'socket:process'
-
-import { Register } from '../../lib/component.js'
+import { register } from '../../lib/component.js'
 import { Spring } from '../../lib/spring.js'
+
+import Text from '../../components/text.js'
 
 function PeerList (props) {
   const peers = []
@@ -13,8 +13,8 @@ function PeerList (props) {
       peers.push(
         tr(
           td([peer.peerId.slice(0, 6), peer.peerId.slice(-2)].join('..')),
-          td([peer.address, peer.port].join(':')),
-          td([scid.slice(0, 6), scid.slice(-2)].join('..'))
+          td([peer.address, peer.port].join(':'))
+          // td([scid.slice(0, 6), scid.slice(-2)].join('..'))
         )
       )
     }
@@ -24,8 +24,8 @@ function PeerList (props) {
     thead(
       tr(
         th('Id'),
-        th('Address:Port'),
-        th('Subcluster')
+        th('Address:Port')
+        // th('Subcluster')
       )
     ),
     tbody(
@@ -34,7 +34,7 @@ function PeerList (props) {
   )
 }
 
-PeerList = Register(PeerList)
+Profile.PeerList = register(PeerList)
 
 function PeerInfo (props) {
   let shortPeerId = 'Working...'
@@ -73,7 +73,7 @@ function PeerInfo (props) {
   )
 }
 
-PeerInfo = Register(PeerInfo)
+Profile.PeerInfo = register(PeerInfo)
 
 function PeerMetrics (props) {
   props.i ??= []
@@ -133,7 +133,7 @@ function PeerMetrics (props) {
   )
 }
 
-PeerMetrics = Register(PeerMetrics)
+Profile.PeerMetrics = register(PeerMetrics)
 
 async function Profile (props) {
   const {
@@ -151,8 +151,14 @@ async function Profile (props) {
 
   net.socket.on('#ready', networkInfo => {
     const elPeerInfo = document.querySelector('peer-info')
+    if (networkInfo.natType > 1) {
+      const state = document.querySelector('messages > header .title .state')
+      state.textContent = 'online'
+    }
     elPeerInfo.render(networkInfo)
   })
+
+  let metrics = {}
 
   net.socket.on('#data', async () => {
     const elPeerMetrics = document.querySelector('peer-metrics')
@@ -166,7 +172,6 @@ async function Profile (props) {
   let nick = ''
   let status = ''
   let clusterId = ''
-  let metrics = {}
 
   if (dataPeer) {
     const publicKey = dataPeer.signingKeys.publicKey
@@ -281,12 +286,11 @@ async function Profile (props) {
           value: clusterId
         })
       ),
-      PeerInfo({ id: 'peer-info' }),
-      PeerMetrics({ id: 'props' }),
-      PeerList({ id: 'peer-list', net })
+      Profile.PeerInfo({ id: 'peer-info' }),
+      Profile.PeerMetrics({ id: 'props' }),
+      Profile.PeerList({ id: 'peer-list', net })
     )
   ]
 }
 
-Profile = Register(Profile)
-export { Profile }
+export default register(Profile)

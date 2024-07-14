@@ -1,5 +1,4 @@
-import { Register } from '../lib/component.js'
-import { Button } from './button.js'
+import { register } from '../lib/component.js'
 
 function Preview (props, ...children) {
   let escapeListener
@@ -66,15 +65,13 @@ function Preview (props, ...children) {
   const onclick = () => close()
 
   return div({ class: 'overlay', onclick },
-    button({ class: 'close' },
+    /* button({ class: 'close' },
       svg({ class: 'app-icon' },
         use({ 'xlink:href': '#close-icon' })
       )
-    ),
+    ), */
     div({ class: 'image' })
   )
 }
 
-Preview = Register(Preview)
-
-export { Preview }
+export default register(Preview)

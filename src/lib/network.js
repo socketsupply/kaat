@@ -77,11 +77,6 @@ const network = async db => {
     //
     let channels = [
       {
-        accessToken: 'dev',
-        label: 'dev',
-        ...modelDefaults
-      } /* ,
-      {
         accessToken: crypto.randomUUID(),
         label: 'work',
         ...modelDefaults
@@ -90,7 +85,7 @@ const network = async db => {
         accessToken: crypto.randomUUID(),
         label: 'fun',
         ...modelDefaults
-      } */
+      }
     ]
 
     for (const channel of channels) {
@@ -113,6 +108,8 @@ const network = async db => {
   })
 
   globalThis.addEventListener('offline', () => {
+    const state = document.querySelector('messages > header .title .state')
+    state.textContent = 'offline'
   })
 
   if (Object.keys(subclusters).length === 0) {
@@ -154,7 +151,15 @@ const network = async db => {
   // Don't listen to debug in production, it can strain the CPU.
   //
   socket.on('#debug', (pid, str, ...args) => {
-    /* pid = pid.slice(0, 6)
+    pid = pid.slice(0, 6)
+
+    if (str.includes('REF')) {
+      console.log(pid, str, ...args)
+    }
+    /*
+    if (str.includes('<- PUB')) {
+      console.log(pid, str, ...args)
+    }
 
     if (str.includes('<- STREAM')) {
       console.log(pid, str, ...args)

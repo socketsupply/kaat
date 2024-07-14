@@ -1,32 +1,36 @@
-import { Register } from '../lib/component.js'
+import { register } from '../lib/component.js'
 
-function Tab(props, ...children) {
-  Object.assign(this, props)
-  return children
-}
-
-Tab = Register(Tab)
-
-function Tabs(props, ...children) {
-  const { activeTabId } = props
-
+/*
+ * Tabs(
+ *  Tabs.Tab({ id: 'foo' }),
+ *  Tabs.Tab({ id: 'bar' }),
+ *
+ *  Tabs.Panel({ for: 'foo' },
+ *    div('content a')
+ *  ),
+ *  Tabs.Panel({ for: 'bar' },
+ *    div('content b')
+ *  )
+ * )
+ */
+function Tabs (props, ...children) {
   this.selectTab = id => {
     const panels = [...this.querySelectorAll('panel')]
     const tabs = [...this.querySelectorAll('panel')]
 
     for (const el of tabs) {
-      const method = el === elTab.id ? 'add' : 'remove'
+      const method = el.id === id ? 'add' : 'remove'
       el.classList[method]('selected')
     }
 
-    const panel = this.querySelector(`panel[for=${elTab.id}]`)
+    const panel = this.querySelector(`panel[for=${id}]`)
 
     if (!panel) {
-      throw new Error(`<tab id="{elTab.id}"> has no matching <panel>`)
+      throw new Error(`<tab id="${id}"> has no matching <panel>`)
     }
 
     for (const el of panels) {
-      const method = el.getAttribute('for') === elTab.id ? 'add' : 'remove'
+      const method = el.getAttribute('for') === id ? 'add' : 'remove'
       el.classList[method]('selected')
     }
   }
@@ -41,13 +45,24 @@ function Tabs(props, ...children) {
   return children
 }
 
-Tabs = Register(Tabs)
-
-function Panel(props, ...children) {
+function Tab (props, ...children) {
   Object.assign(this, props)
   return children
 }
 
-Panel = Register(Panel)
+Tabs.Tab = register(Tab)
 
-export { Tab, Tabs, Panel }
+function Panel (props, ...children) {
+  Object.assign(this, props)
+  return children
+}
+
+Tabs.Panel = register(Panel)
+
+//
+// As per React's "one component export per file",
+// only the Tabs module is exported, and the other
+// components are added to it, becoming namespaced.
+//
+export default register(Tabs)
+

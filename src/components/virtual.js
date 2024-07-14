@@ -1,4 +1,4 @@
-import { Register } from '../lib/component.js'
+import { register } from '../lib/component.js'
 
 function Virtual (props) {
   this.prependCounter = 0
@@ -495,20 +495,12 @@ function Virtual (props) {
     }
   })
 
-  renderLoadingState () {
+  if (!this.rows) {
     return div({ class: 'x--virtial-loader' })
   }
 
-  renderEmptyState () {
+  if (this.rows.length === 0) {
     return div({ class: 'x--virtial-empty' })
-  }
-
-  if (!this.rows) {
-    return this.renderLoadingState()
-  }
-
-  if (!this.rows.length) {
-    return this.renderEmptyState()
   }
 
   return (
@@ -521,4 +513,4 @@ function Virtual (props) {
   )
 }
 
-Virtual = Register(Virtual)
+export default register(Virtual)

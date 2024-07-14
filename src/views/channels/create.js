@@ -1,12 +1,7 @@
-import { Register } from '../lib/component.js'
-import { Modal } from '../components/modal.js'
-import { Text } from '../components/text.js'
-import { Avatar } from '../components/avatar.js'
-import Buffer from 'socket:buffer'
+import { register } from '../../lib/component.js'
+import Modal from '../../components/modal.js'
+import Text from '../../components/text.js'
 
-//
-// TODO(@heapwolf): a bit redundant, DRY these out
-//
 async function ModelCreateChannel (props) {
   return Modal(
     {
@@ -71,8 +66,6 @@ async function ModelCreateChannel (props) {
     )
   )
 }
- 
-ModelCreateChannel = Register(ModelCreateChannel)
 
 async function ModelManageChannel (props) {
   return Modal(
@@ -140,10 +133,5 @@ async function ModelManageChannel (props) {
     )
   )
 }
- 
-ModelManageChannel = Register(ModelManageChannel)
 
-export {
-  ModelManageChannel,
-  ModelCreateChannel
-}
+export default register(ModelCreateChannel)

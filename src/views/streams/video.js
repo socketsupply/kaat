@@ -1,5 +1,5 @@
-import { Register } from '../lib/component.js'
-import { Modal } from '../components/modal.js'
+import { register } from '../../lib/component.js'
+import Modal from '../../components/modal.js'
 
 //
 // A component for audio-video streams (not-ready)
@@ -19,10 +19,9 @@ async function VideoGrid (props) {
   ]
 }
 
-VideoGrid = Register(VideoGrid)
+VideoStreams.VideoGrid = register(VideoGrid)
 
-async function ModalVideoStreams (props) {
-
+async function VideoStreams (props) {
   return Modal(
     {
       id: 'video-streams',
@@ -33,11 +32,8 @@ async function ModalVideoStreams (props) {
       ],
       onclick
     },
-    AudioGrid({ id: 'video-grid' })
+    VideoStreams.VideoGrid({ id: 'video-grid' })
   )
 }
 
-ModalAudioStreams = Register(ModalAudioStreams)
-
-export { ModalAudioStreams }
- 
+export default register(VideoStreams)

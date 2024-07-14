@@ -292,23 +292,21 @@ group {
 /* Preview */
 preview {
   .image {
-    border-radius: 12px;
-    box-shadow: 0 2px 10px var(--x-modal-overlay);
     opacity: 0;
     pointer-events: none;
     display: grid;
-    overflow: hidden;
-    max-width: 90vw;
+    min-width: 100vw;
     max-height: 80vh;
     margin: auto;
     justify-content: center;
     align-items: center;
-    height: fit-content;
 
     img {
-      min-width: 90vw;
+      min-width: 95vw;
+      min-height: 100%;
       max-height: 100%;
-      background: var(--x-background);
+      aspect-ratio: 1/1;
+      object-fit: contain;
     }
   }
 

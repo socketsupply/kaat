@@ -1,4 +1,4 @@
-import { Register } from '../lib/component.js'
+import { register } from '../lib/component.js'
 
 function Text (props, ...children) {
   const state = this.state = {}
@@ -101,5 +101,4 @@ function Text (props, ...children) {
   )
 }
 
-Text = Register(Text)
-export { Text }
+export default register(Text)

@@ -5,13 +5,13 @@ import { network } from './lib/network.js'
 import { database } from './lib/data.js'
 import { createRoot } from './lib/component.js'
 
-import { Messages } from './views/messages/index.js'
-import { Profile } from './views/profile/index.js'
-import { Sidebar } from './views/sidebar/index.js'
-import { ModalAudioStreams } from './views/streams/audio.js'
-import { ModelManageChannel, ModelCreateChannel } from './views/channel-modals.js'
-import { Preview } from './components/preview.js'
-import { Modal } from '../components/modal.js'
+import Messages from './views/messages/index.js'
+import Profile from './views/profile/index.js'
+import Sidebar from './views/sidebar/index.js'
+import AudioStreams from './views/streams/audio.js'
+import ModelManageChannel from './views/channels/manage.js'
+import ModelCreateChannel from './views/channels/create.js'
+import Preview from './components/preview.js'
 
 //
 // The main component, this is the program entry point.
@@ -25,12 +25,9 @@ async function App () {
   document.body.setAttribute('platform', process.platform)
 
   if (isMobile && process.platform === 'ios') {
-    //
     // For our UI design, subscribe to keyboard events. The layout should
     // change slightly when the input moves away from the bottom bevel.
-    //
-    let keyboardHeight
-
+    // @ts-ignore
     window.addEventListener('keyboard', ({ detail }) => {
       if (detail.value.event === 'will-show') {
         document.body.setAttribute('keyboard', 'true')
@@ -39,16 +36,10 @@ async function App () {
       if (detail.value.event === 'will-hide') {
         document.body.removeAttribute('keyboard')
       }
-
-      if (detail.value.event === 'did-show') {
-      }
-
-      if (detail.value.event === 'did-hide') {
-      }
     })
   }
 
-  const setTheme = async (event) => {
+  const setTheme = async () => {
     //
     // extract the current theme's background color from the CSS variable
     // and use it to set the color of the actual window.
@@ -58,6 +49,7 @@ async function App () {
     const rgba = styles.getPropertyValue('--x-window').trim()
     const { 0: red, 1: green, 2: blue, 3: alpha } = rgba.match(/\d+/g)
 
+    // @ts-ignore
     w.setBackgroundColor({ red, green, blue, alpha })
   }
 
@@ -78,7 +70,7 @@ async function App () {
     }
 
     const menu = `
-      Relay:
+      Kaat:
         About Kaat: _
         Settings...: , + CommandOrControl
         ---
@@ -122,7 +114,6 @@ async function App () {
       {
         description: 'Select A Model File',
         accept: {
-          '*/*': ['.gguf']
         }
       }
     ],
@@ -133,7 +124,8 @@ async function App () {
   //
   // Pretty much a global click handler for anything in the app.
   //
-  const onclick = async (event, match) => {
+
+  const onclick = async (event, match) => { 
     const el = match('[data-event]')
 
     if (el?.dataset.event === 'sidebar-toggle') {
@@ -214,7 +206,7 @@ async function App () {
       await Sidebar({ id: 'sidebar', class: 'view', ...context }),
       ModelManageChannel(),
       ModelCreateChannel(),
-      ModalAudioStreams({ ...context }),
+      AudioStreams({ ...context }),
       Preview()
     )
   ]
