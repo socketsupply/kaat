@@ -241,11 +241,46 @@ async function Profile (props) {
   this.updateTransform = spring.updateTransform.bind(spring)
 
   //
-  // Handle the close button
+  // Helpers
+  //
+  const getUID = async () => {
+    const { data: dataPeer } = await db.state.get('peer')
+    const publicKey = dataPeer.signingKeys.publicKey
+    return Buffer.from(publicKey).toString('base64')
+  }
+
+  const setNick = async nick => {
+    const uid = await getUID()
+    const { data: dataClaim } = await db.claims.get(uid)
+    dataClaim.nick = nick
+    await db.claims.put(uid, dataClaim)
+  }
+
+  const setStatus = async status => {
+    const uid = await getUID()
+    const { data: dataClaim } = await db.claims.get(uid)
+    dataClaim.status = status
+    await db.claims.put(uid, dataClaim)
+  }
+
+  //
+  // Events
   //
   const onclick = (event, match) => {
     if (match('#profile-close')) {
       spring.moveTo(window.innerHeight)
+    }
+  }
+
+  const onchange = (event, match) => {
+    const el = match('[data-event]')
+
+    if (el?.dataset.event === 'settings-nick') {
+      setNick(el.value)
+    }
+
+    if (el?.dataset.event === 'settings-status') {
+      setStatus(el.value)
     }
   }
 
@@ -259,7 +294,7 @@ async function Profile (props) {
       )
     ),
     div({ class: 'content' },
-      div({ class: 'grid' },
+      div({ class: 'grid', onchange },
         Text({
           errorMessage: 'Accepts A-Z, 0-9, and "_"',
           label: 'Nickname',
@@ -282,6 +317,7 @@ async function Profile (props) {
         }),
         Text({
           label: 'ClusterId',
+          readOnly: 'true',
           data: { event: 'settings-clusterId' },
           value: clusterId
         })

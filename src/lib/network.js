@@ -97,8 +97,6 @@ const network = async db => {
     socket = await createNetwork(dataPeer)
   }
 
-  window.socket = socket
-
   window.addEventListener('focus', () => {
     if (socket) socket.reconnect()
   })

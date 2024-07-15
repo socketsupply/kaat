@@ -11,17 +11,20 @@ class Stream {
     this.pcmNode = null
     this.onQueue = null
     this.onData = null
-    this.onBuffer = null
+    this.onEnd = null
     this.onAudioLevelChange = null
     this.mediaRecorder = null
     this.mediaStream = null
     this.sequenceNumber = 0
     this.seqRecv = 0
+    this.channelId = null
+    this.nick = ""
     this.receivedPackets = []
 
     // remote only
     this.queue = []
     this.isLocal = false
+    this.isStopped = false
     this.sourceBuffer = null
     this.audioElement = null
 
@@ -32,14 +35,22 @@ class Stream {
       created: 0,
       consumed: 0
     }
+
+    this.lastEnqueueTime = Date.now()
   }
 
   async start () {
     if (this.isLocal) {
-      if (this.mediaStream) return // don't start twice.
+      this.isStopped = false
 
-      await this.audioContext.audioWorklet.addModule('views/streams/pcm.js')
-      this.pcmNode = new AudioWorkletNode(this.audioContext, 'pcm-processor')
+      if (this.audioContext.state === 'suspended') {
+        await this.audioContext.resume()
+      }
+
+      if (!this.mediaStream) {
+        await this.audioContext.audioWorklet.addModule('views/streams/pcm.js')
+        this.pcmNode = new AudioWorkletNode(this.audioContext, 'pcm-processor')
+      }
 
       this.mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: true,
@@ -51,29 +62,25 @@ class Stream {
       source.connect(this.analyser)
       source.connect(this.pcmNode)
 
+      // TODO(@heapwolf): allow monitor for headphones
       // this.pcmNode.connect(this.audioContext.destination)
-      // if you want to hear your local stream
       // this.gainNode.connect(this.audioContext.destination)
-
       this.pcmNode.port.onmessage = event => this.onData(event.data)
-
-      this.startAnalyzingLocalNode()
     } else {
-      this.startAnalyzingRemoteNode()
-    }
-  }
+      this.timeout = setInterval(async () => {
+        const now = Date.now()
 
-  stop () {
-    if (!this.animationFrameId) return
-    cancelAnimationFrame(this.animationFrameId)
-    this.animationFrameId = null
+        if (now - this.lastEnqueueTime > 60000) {
+          this.stop()
+          if (this.onEnd) this.onEnd()
+        }
+      }, 1000) // Check every second
+    }
+
+    this.startAnalyzingNode()
   }
 
   async dequeue () {
-    if (this.audioContext.state === 'suspended') {
-      await this.audioContext.resume()
-    }
-
     if (this.queue.length) {
       const chunk = this.queue.shift()
 
@@ -110,11 +117,13 @@ class Stream {
     const data = new Int16Array(uint8Array.buffer.slice(4))
 
     this.queue.push(data)
+    this.lastEnqueueTime = Date.now()
     this.dequeue()
   }
 
   analyze () {
     if (!this.analyser) return
+    if (this.isStopped) return
 
     const bufferLength = this.analyser.frequencyBinCount
     const dataArray = new Uint8Array(bufferLength)
@@ -136,31 +145,13 @@ class Stream {
     }
   }
 
-  startAnalyzingRemoteNode () {
+  startAnalyzingNode () {
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId)
     }
 
     const analyzeFrame = () => {
       this.analyze()
-      this.animationFrameId = requestAnimationFrame(analyzeFrame)
-    }
-
-    this.animationFrameId = requestAnimationFrame(analyzeFrame)
-  }
-
-  startAnalyzingLocalNode () {
-    if (this.animationFrameId) {
-      cancelAnimationFrame(this.animationFrameId)
-    }
-
-    const analyzeFrame = () => {
-      const bufferLength = this.analyser.frequencyBinCount
-      const dataArray = new Uint8Array(bufferLength)
-
-      if (!globalThis.navigator.onLine) return
-      this.analyze()
-      this.analyser.getByteTimeDomainData(dataArray)
       this.animationFrameId = requestAnimationFrame(analyzeFrame)
     }
 
@@ -168,7 +159,61 @@ class Stream {
   }
 
   setVolume (value) {
+    if (!this.isStopped) return
     this.gainNode.gain.value = value
+  }
+
+  async stop ({ destroy } = {}) {
+    this.isStopped = true
+
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId)
+      this.animationFrameId = null
+    }
+
+    if (this.onAudioLevelChange) {
+      this.onAudioLevelChange(0)
+    }
+
+    if (this.audioContext) {
+      await this.audioContext.suspend()
+    }
+
+    if (this.mediaStream) {
+      this.mediaStream.getTracks().forEach(track => track.stop())
+    }
+
+    if (this.timeout) {
+      clearInterval(this.timeout)
+      this.timeout = null
+    }
+
+    if (!destroy) return
+
+    if (this.mediaStream) {
+      this.mediaStream = null
+    }
+
+    if (this.pcmNode) {
+      this.pcmNode.port.onmessage = null
+      this.pcmNode.disconnect()
+      this.pcmNode = null
+    }
+
+    if (this.gainNode) {
+      this.gainNode.disconnect()
+      this.gainNode = null
+    }
+
+    if (this.analyser) {
+      this.analyser.disconnect()
+      this.analyser = null
+    }
+
+    if (this.audioContext) {
+      this.audioContext.close()
+      this.audioContext = null
+    }
   }
 }
 
@@ -176,9 +221,6 @@ async function AudioStream (props) {
   props.stream.onAudioLevelChange = (level) => {
     const borderWidth = 1 + level * 29
     this.firstElementChild.firstElementChild.style.outlineWidth = `${borderWidth}px`
-  }
-
-  props.stream.onBuffer = () => {
   }
 
   return [
@@ -209,13 +251,13 @@ async function AudioStreams (props) {
     db
   } = props
 
-  // let onStream
-
   const cid = Buffer.from(net.socket.clusterId).toString('hex')
   const localStream = new Stream({ isLocal: true, id: net.socket.peerId })
   const remoteStreams = {}
 
-  // @ts-ignore
+  let onStream = null // The current Stream
+
+  // @ts-ignore // for debugging/inspecting
   window.streams = {
     localStream,
     remoteStreams
@@ -228,13 +270,13 @@ async function AudioStreams (props) {
   localStream.nick = dataClaim.nick
 
   const stopLocalStream = async () => {
-    if (!localStream) return
+    if (!onStream) return
 
     const { data: dataPeer } = await db.state.get('peer')
     const subcluster = net.subclusters[dataPeer.channelId]
     const partyName = [cid, dataPeer.channelId].join('')
 
-    // subcluster.off(partyName, onStream)
+    subcluster.off(partyName, onStream)
     localStream.stop()
   }
 
@@ -244,10 +286,16 @@ async function AudioStreams (props) {
     const { data: dataClaim } = await db.claims.get(pk)
     const stream = new Stream({ id: pk, nick: dataClaim?.nick })
     remoteStreams[pk] = stream
-    stream.setVolume(1)
+
+    stream.onEnd = () => {
+      stream.stop({ destroy: true })
+      delete remoteStreams[pk]
+      elAudioGrid.render({ streams: [localStream, ...Object.values(remoteStreams)] })
+    }
+
     await stream.start()
 
-    // recalibrate grid
+    // Recalibrate grid
     const items = Object.keys(remoteStreams).length
     const columns = Math.ceil(Math.sqrt(items))
     const rows = Math.ceil(items / columns)
@@ -255,7 +303,7 @@ async function AudioStreams (props) {
     elAudioGrid.style.gridTemplateColumns = `repeat(${columns}, auto)`
     elAudioGrid.style.gridTemplateRows = `repeat(${rows}, auto)`
 
-    // render the grid with all the streams
+    // Render the grid with all the streams
     elAudioGrid.render({ streams: [localStream, ...Object.values(remoteStreams)] })
     return stream
   }
@@ -266,13 +314,19 @@ async function AudioStreams (props) {
     const pk = Buffer.from(dataPeer.signingKeys.publicKey).toString('base64')
     const { data: dataClaim } = await db.claims.get(pk)
 
+    if (localStream.channelId !== dataPeer.channelId) {
+      await stopLocalStream()
+    }
+
+    localStream.channelId = dataPeer.channelId
     localStream.nick = dataClaim.nick
 
     const subcluster = net.subclusters[dataPeer.channelId]
 
     const partyName = [cid, dataPeer.channelId].join('')
 
-    localStream.onData = async (data) => {
+    // When the local stream has data, send it to any known and relevant peers
+    localStream.onData = async data => {
       const sequenceNumber = localStream.sequenceNumber++
       const int16Array = new Int16Array(data) // Ensure data is Int16Array
 
@@ -292,7 +346,8 @@ async function AudioStreams (props) {
       await subcluster.stream(partyName, packet)
     }
 
-    subcluster.on(partyName, async (value, packet) => {
+    // When there is new data from the network, enqueue it for stream processing
+    onStream = async (value, packet) => {
       const pk = Buffer.from(packet.usr2).toString('base64')
 
       let stream = remoteStreams[pk]
@@ -304,9 +359,10 @@ async function AudioStreams (props) {
       stream.stats.consumed += value.byteLength
 
       stream.enqueue(Uint8Array.from(value))
-    })
+    }
 
-    localStream.setVolume(1)
+    subcluster.on(partyName, onStream) 
+
     await localStream.start()
   }
 
