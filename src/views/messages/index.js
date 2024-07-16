@@ -708,7 +708,7 @@ async function Messages (props) {
   //
   return [
     header({ class: 'primary draggable', onclick },
-      span({ class: 'title' }, '#', dataChannel.label, ' - ', em({ class: 'state' }, 'offline')),
+      span({ class: 'title' }, '#', dataChannel.label),
       button({ id: 'open-audio-streams' },
         svg({ class: 'app-icon' },
           use({ 'xlink:href': '#talk-icon' })

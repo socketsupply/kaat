@@ -151,10 +151,6 @@ async function Profile (props) {
 
   net.socket.on('#ready', networkInfo => {
     const elPeerInfo = document.querySelector('peer-info')
-    if (networkInfo.natType > 1) {
-      const state = document.querySelector('messages > header .title .state')
-      state.textContent = 'online'
-    }
     elPeerInfo.render(networkInfo)
   })
 

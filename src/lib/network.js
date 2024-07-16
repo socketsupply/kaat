@@ -43,7 +43,7 @@ const network = async db => {
     dataPeer = {
       peerId: await Encryption.createId(),
       signingKeys: await Encryption.createKeyPair(),
-      clusterId: await Encryption.createClusterId('kaat-development'),
+      clusterId: await Encryption.createClusterId('kaat')
     }
 
     const pk = dataPeer.signingKeys.publicKey
@@ -102,12 +102,12 @@ const network = async db => {
   })
 
   globalThis.addEventListener('online', () => {
+    document.body.setAttribute('network', 'online')
     if (socket) socket.reconnect()
   })
 
   globalThis.addEventListener('offline', () => {
-    const state = document.querySelector('messages > header .title .state')
-    state.textContent = 'offline'
+    document.body.setAttribute('network', 'offline')
   })
 
   if (Object.keys(subclusters).length === 0) {
