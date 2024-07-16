@@ -149,17 +149,16 @@ const network = async db => {
   // Don't listen to debug in production, it can strain the CPU.
   //
   socket.on('#debug', (pid, str, ...args) => {
-    pid = pid.slice(0, 6)
+    /* pid = pid.slice(0, 6)
+
+    if (str.includes('<- STREAM')) {
+      console.log(pid, str, ...args)
+    }
 
     if (str.includes('REF')) {
       console.log(pid, str, ...args)
     }
-    /*
     if (str.includes('<- PUB')) {
-      console.log(pid, str, ...args)
-    }
-
-    if (str.includes('<- STREAM')) {
       console.log(pid, str, ...args)
     }
 
