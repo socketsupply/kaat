@@ -1,6 +1,6 @@
 export class Stream {
   constructor (opts) {
-    this.sampleRate = 16000 // Set sample rate to 16 kHz
+    this.sampleRate = 16000 // 16 kHz may be a bit low
 
     this.audioContext = new globalThis.AudioContext({ sampleRate: this.sampleRate, latencyHint: 'interactive' })
     this.analyser = this.audioContext.createAnalyser()
@@ -9,6 +9,7 @@ export class Stream {
     this.onQueue = null
     this.onData = null
     this.onEnd = null
+    this.onWarn = null
     this.onDevice = null
     this.onAudioLevelChange = null
     this.mediaRecorder = null
@@ -21,17 +22,16 @@ export class Stream {
     this.receivedPackets = []
 
     this.highWaterMark = 32 // Number of chunks to buffer before playing
-    this.gainNode.gain.value = 0.1
+    this.gainNode.gain.value = 1
 
     // remote only
     this.queue = []
-    this.maxQueueSize = 512
+    this.maxQueueSize = 2048
     this.isLocal = false
     this.isStopped = false
     this.sourceBuffer = null
     this.audioElement = null
 
-    // this.analyser.fftSize = 4096;
     Object.assign(this, opts)
 
     this.stats = {
@@ -40,14 +40,6 @@ export class Stream {
     }
 
     this.lastEnqueueTime = Date.now()
-  }
-
-  async getActiveDevice () {
-    if (!this.inputTrack) return null
-
-    const settings = this.inputTrack.getSettings()
-    const devices = await navigator.mediaDevices.enumerateDevices()
-    return devices.find(device => device.deviceId === settings.deviceId)
   }
 
   async start () {
@@ -73,8 +65,6 @@ export class Stream {
       source.connect(this.analyser)
       source.connect(this.pcmNode)
 
-      this.inputTrack = this.mediaStream.getAudioTracks()[0];
-
       // TODO: allow monitor for headphones
       // this.pcmNode.connect(this.audioContext.destination)
       // this.gainNode.connect(this.audioContext.destination)
@@ -93,60 +83,71 @@ export class Stream {
     this.startAnalyzingNode()
   }
 
-  async dequeue () {
-    if (this.queue.length) {
-      const bufferChunks = this.queue.splice(0, this.highWaterMark)
-      const bufferLength = bufferChunks.reduce((sum, chunk) => sum + chunk.length, 0)
-
-      const audioBuffer = this.audioContext.createBuffer(1, bufferLength, this.sampleRate)
-      const channelData = audioBuffer.getChannelData(0)
-
-      let offset = 0
-      bufferChunks.forEach(chunk => {
-        for (let i = 0; i < chunk.length; i++) {
-          channelData[offset + i] = chunk[i] / 32768 // Normalize 16-bit PCM data
-        }
-        offset += chunk.length
-      })
-
-      try {
-        const bufferSource = this.audioContext.createBufferSource()
-        bufferSource.buffer = audioBuffer
-        bufferSource.onended = () => {
-          this.localStream.setVolume(0.6)
-          bufferSource.disconnect()
-          this.dequeue()
-        }
-        bufferSource.connect(this.gainNode)
-        bufferSource.connect(this.analyser)
-        this.gainNode.connect(this.audioContext.destination)
-        this.localStream.setVolume(0)
-        bufferSource.start(0)
-      } catch (error) {
-        console.error('Error during audio playback setup:', error)
-      }
-    }
-  }
-
   async enqueue (raw) {
     const uint8Array = new Uint8Array(raw)
     const view = new DataView(uint8Array.buffer)
 
     const seq = view.getUint32(0, true)
-    if (seq < this.seqRecv) return
-    this.seqRecv = seq
-
     const data = new Int16Array(uint8Array.buffer.slice(4))
 
     if (this.queue.length >= this.maxQueueSize) {
-      console.warn('Queue is full, removing oldest packet to make space')
-      this.queue.shift() // Remove the oldest packet
+      if (this.onWarn) this.onWarn('Queue is full, removing oldest packet')
+      this.queue.shift()
     }
 
-    this.queue.push(data)
+    let inserted = false
+
+    for (let i = 0; i < this.queue.length; i++) {
+      if (this.queue[i].seq > seq) {
+        this.queue.splice(i, 0, { seq, data })
+        inserted = true
+        break
+      }
+    }
+
+    if (!inserted) {
+      this.queue.push({ seq, data })
+    }
+
     this.lastEnqueueTime = Date.now()
-    if (this.queue.length >= this.highWaterMark) { // Start playback only if there are enough chunks
+
+    if (this.queue.length >= this.highWaterMark) {
       this.dequeue()
+    }
+  }
+
+  async dequeue () {
+    if (!this.queue.length) return
+
+    const bufferChunks = this.queue.splice(0, this.highWaterMark).map(chunk => chunk.data)
+    const bufferLength = bufferChunks.reduce((sum, chunk) => sum + chunk.length, 0)
+
+    const audioBuffer = this.audioContext.createBuffer(1, bufferLength, this.sampleRate)
+    const channelData = audioBuffer.getChannelData(0)
+
+    let offset = 0
+    bufferChunks.forEach(chunk => {
+      for (let i = 0; i < chunk.length; i++) {
+        channelData[offset + i] = chunk[i] / 32768 // Normalize 16-bit PCM data
+      }
+      offset += chunk.length
+    })
+
+    try {
+      const bufferSource = this.audioContext.createBufferSource()
+      bufferSource.buffer = audioBuffer
+      bufferSource.onended = () => {
+        this.localStream.setVolume(1)
+        bufferSource.disconnect()
+        this.dequeue()
+      }
+      bufferSource.connect(this.gainNode)
+      bufferSource.connect(this.analyser)
+      this.gainNode.connect(this.audioContext.destination)
+      this.localStream.setVolume(0)
+      bufferSource.start(0)
+    } catch (error) {
+      console.error('Error during audio playback setup:', error)
     }
   }
 

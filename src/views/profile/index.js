@@ -126,7 +126,7 @@ function PeerMetrics (props) {
         ),
         tr(
           td('Dropped'),
-          td([props.i.DROPPED, 'N/A'].join(':'))
+          td([props.i.DROPPED, '0'].join(':'))
         )
       )
     )
@@ -199,6 +199,7 @@ async function Profile (props) {
 
       document.body.style.background = `rgba(0, 0, 0, ${Math.min(1, Math.max(0, opacity))})`
 
+      elMain.style.opacity = 1.2 - opacity 
       elMain.style.transform = `scale(${Math.min(scale, 1)})`
       elMain.style.transformOriginY = `${vProfileTransformOrigin}%`
     },
