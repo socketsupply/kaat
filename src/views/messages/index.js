@@ -738,6 +738,12 @@ async function Messages (props) {
 
         div({ id: 'input-message', contenteditable: 'true', onkeydown, onkeyup, onpaste }),
 
+        /* button({ id: 'send-file' },
+          svg({ class: 'app-icon' },
+            use({ 'xlink:href': '#file-icon' })
+          )
+        ), */
+
         button({ id: 'send-message' },
           svg({ class: 'app-icon' },
             use({ 'xlink:href': '#send-icon' })

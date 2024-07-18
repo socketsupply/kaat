@@ -73,11 +73,11 @@ export class Stream {
       this.timeout = setInterval(async () => {
         const now = Date.now()
 
-        if (now - this.lastEnqueueTime > 6000) {
+        if (now - this.lastEnqueueTime > 60000) {
           this.stop()
           if (this.onEnd) this.onEnd()
         }
-      }, 512)
+      }, 1000)
     }
 
     this.startAnalyzingNode()
