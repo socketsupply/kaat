@@ -173,6 +173,10 @@ body[hardware="desktop"] {
 }
 
 body[hardware="mobile"] {
+  &.loaded {
+    background-color: #000;
+  }
+
   header.primary {
     border-bottom: 1px solid var(--x-border);
   }

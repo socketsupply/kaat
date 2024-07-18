@@ -306,7 +306,11 @@ async function Messages (props) {
     const message = packetToMessage(packet)
     message.ts = value.ts || packet.meta.ts // use the unencrypted timestamp
 
+    const { data: hasMessage } = await db.indexes.has(message.messageId)
+    if (hasMessage) return
+
     await db[dataPeer.channelId].put([message.ts, message.messageId], message)
+    await db.indexes.put(message.messageId, message.ts)
 
     const child = await Messages.Message(await prepareMessageForReading(message))
     let parent = elChannels.state[dataPeer.channelId]
@@ -354,6 +358,10 @@ async function Messages (props) {
   const elPeerList = document.getElementById('peer-list')
 
   net.subclusters[dataPeer.channelId].on('#join', (...args) => {
+    elPeerList.render()
+  })
+
+  net.subclusters[dataPeer.channelId].on('#leave', (...args) => {
     elPeerList.render()
   })
 

@@ -73,11 +73,11 @@ export class Stream {
       this.timeout = setInterval(async () => {
         const now = Date.now()
 
-        if (now - this.lastEnqueueTime > 60000) {
+        if (now - this.lastEnqueueTime > 6000) {
           this.stop()
           if (this.onEnd) this.onEnd()
         }
-      }, 1000) // Check every second
+      }, 512)
     }
 
     this.startAnalyzingNode()
@@ -111,7 +111,7 @@ export class Stream {
 
     this.lastEnqueueTime = Date.now()
 
-    if (this.queue.length >= this.highWaterMark) {
+    if (this.queue.length >= this.highWaterMark * 2) {
       this.dequeue()
     }
   }
@@ -137,14 +137,12 @@ export class Stream {
       const bufferSource = this.audioContext.createBufferSource()
       bufferSource.buffer = audioBuffer
       bufferSource.onended = () => {
-        this.localStream.setVolume(1)
         bufferSource.disconnect()
         this.dequeue()
       }
       bufferSource.connect(this.gainNode)
       bufferSource.connect(this.analyser)
       this.gainNode.connect(this.audioContext.destination)
-      this.localStream.setVolume(0)
       bufferSource.start(0)
     } catch (error) {
       console.error('Error during audio playback setup:', error)
@@ -174,17 +172,12 @@ export class Stream {
     }
   }
 
-  startAnalyzingNode () {
-    if (this.animationFrameId) {
-      globalThis.cancelAnimationFrame(this.animationFrameId)
+  startAnalyzingNode() {
+    if (this.analysisInterval) {
+      clearInterval(this.analysisInterval)
     }
 
-    const analyzeFrame = () => {
-      this.analyze()
-      this.animationFrameId = globalThis.requestAnimationFrame(analyzeFrame)
-    }
-
-    this.animationFrameId = globalThis.requestAnimationFrame(analyzeFrame)
+    this.analysisInterval = setInterval(() => this.analyze(), 64)
   }
 
   setVolume (value) {

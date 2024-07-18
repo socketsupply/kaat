@@ -4,34 +4,43 @@ import { Spring } from '../../lib/spring.js'
 import Text from '../../components/text.js'
 
 function PeerList (props) {
-  const peers = []
+  const items = []
 
-  if (!props.net?.subclusters) return b()
+  if (!props.net?.subclusters) {
+    // TODO(@heapwolf): make the empty state look good.
+    return div({ class: 'empty-state' }, 'Empty') 
+  }
 
-  for (const [scid, subcluster] of Object.entries(props.net.subclusters)) {
+  for (const subcluster of Object.values(props.net.subclusters)) {
+    const scid = subcluster.subclusterId.toString('base64')
+    let rows = []
+
     for (const peer of [...subcluster.peers.values()]) {
-      peers.push(
+      rows.push(
         tr(
           td([peer.peerId.slice(0, 6), peer.peerId.slice(-2)].join('..')),
-          td([peer.address, peer.port].join(':'))
-          // td([scid.slice(0, 6), scid.slice(-2)].join('..'))
+          td(peer.address, ':', String(peer.port))
         )
       )
     }
+
+    const sid = [scid.slice(0, 6), scid.slice(-2)].join('..')
+
+    items.push(
+      h4(sid),
+      table(
+        thead(
+          tr(
+            th('Peer Id'),
+            th('Address:Port')
+          )
+        ),
+        tbody(rows)
+      )
+    )
   }
 
-  return table(
-    thead(
-      tr(
-        th('Id'),
-        th('Address:Port')
-        // th('Subcluster')
-      )
-    ),
-    tbody(
-      ...peers
-    )
-  )
+  return items
 }
 
 Profile.PeerList = register(PeerList)
@@ -197,7 +206,9 @@ async function Profile (props) {
         elMain = document.getElementById('main')
       }
 
-      document.body.style.background = `rgba(0, 0, 0, ${Math.min(1, Math.max(0, opacity))})`
+      if (!isMobile) {
+        document.body.style.background = `rgba(0, 0, 0, ${Math.min(1, Math.max(0, opacity))})`
+      }
 
       elMain.style.opacity = 1.2 - opacity 
       elMain.style.transform = `scale(${Math.min(scale, 1)})`
@@ -265,7 +276,7 @@ async function Profile (props) {
   //
   const onclick = (event, match) => {
     if (match('#profile-close')) {
-      spring.moveTo(window.innerHeight)
+      spring.moveTo(window.innerHeight, isMobile ? {} : { k: 180, b: 44 })
     }
   }
 

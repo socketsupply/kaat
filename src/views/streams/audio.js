@@ -154,7 +154,8 @@ async function AudioStreams (props) {
 
     subcluster.on(partyName, onStream)
 
-    localStream.setVolume(0.6)
+    net.socket.reconnect()
+
     await localStream.start()
   }
 

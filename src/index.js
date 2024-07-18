@@ -214,5 +214,11 @@ async function App () {
 
 document.addEventListener('DOMContentLoaded', () => {
   createRoot(App, document.body)
+
+  // fade-in the UI gently
   document.body.classList.remove('loading')
+
+  document.body.addEventListener('transitionend', () => {
+    document.body.classList.add('loaded')
+  })
 })

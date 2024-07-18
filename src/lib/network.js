@@ -149,15 +149,20 @@ const network = async db => {
   // Don't listen to debug in production, it can strain the CPU.
   //
   socket.on('#debug', (pid, str, ...args) => {
-    /* pid = pid.slice(0, 6)
+    pid = pid.slice(0, 6)
 
-    if (str.includes('<- STREAM')) {
+    if (str.includes('JOIN')) {
       console.log(pid, str, ...args)
     }
 
-    if (str.includes('REF')) {
+    if (str.includes('CONN')) {
       console.log(pid, str, ...args)
     }
+
+    /* if (str.includes('<- STREAM')) {
+      console.log(pid, str, ...args)
+    }
+
     if (str.includes('<- PUB')) {
       console.log(pid, str, ...args)
     }
@@ -167,10 +172,6 @@ const network = async db => {
     }
 
     if (str.includes('PONG')) {
-      console.log(pid, str, ...args)
-    }
-
-    if (str.includes('JOIN')) {
       console.log(pid, str, ...args)
     }
 
@@ -187,27 +188,46 @@ const network = async db => {
     } */
   })
 
-  socket.on('#connection', (packet, peer) => {
-    // sync is bidirectional, so it only needs to be
-    // initiated by one side. in this case we simply
-    // select the lexicographically higher peerId to
-    // kick-off the syncing protocol.
-    console.log(`-> SYNC (peerId=${peer.peerId.slice(0, 6)}, address=${peer.address}:${peer.port})`)
+  //
+  // you decide on how much you want to sync, be careful not to get rate
+  // limited by other peers; the default rate is 1024 packets per minute.
+  //
+  const sync = {}
 
-    if (peer.lastSync > Date.now() - 6000) {
+  socket.on('#connection', (packet, peer) => {
+    //
+    // Sync is bidirectional, so it only needs to be initiated by one side.
+    // We select the lexicographically higher peerId to kick-off the sync.
+    //
+    const now = Date.now()
+    let first = false
+
+    if (!sync[peer.peerId]) {
+      sync[peer.peerId] = now
+      first = true
+    }
+
+    const lastSyncSeconds = (now - sync[peer.peerId]) / 1000
+
+    if (first || now - sync[peer.peerId] > 6000) {
+      console.log(`-> SYNC SEND (peerId=${peer.peerId.slice(0, 6)}, address=${peer.address}:${peer.port}, lastSync=${lastSyncSeconds.toFixed(2)} seconds ago)`)
       socket.sync(peer.peerId)
-      peer.lastSync = Date.now()
+      sync[peer.peerId] = now
     }
   })
 
   // socket.on('#packet', (...args) => console.log('PACKET', ...args))
   // socket.on('#send', (...args) => console.log('SEND', ...args))
 
-  return {
+  const net = {
     socket,
     subclusters,
     createChannel
   }
+
+  window.net = net
+
+  return net
 }
 
 export { network }
