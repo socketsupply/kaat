@@ -58,6 +58,7 @@ modal .dialog > header {
 
   .title {
     text-align: center;
+    padding: 8px;
   }
 }
 
@@ -70,7 +71,7 @@ modal .dialog > footer {
   height: 60px;
   justify-content: end;
   align-items: center;
-  padding: 0 20px;
+  padding: 18px;
   display: flex;
   gap: 10px;
 }
@@ -218,6 +219,14 @@ text[label] .x--text-invalid {
 }
 
 /* Button */
+button {
+  place-self: end;
+  display: grid;
+  align-content: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+}
 
 button[type] {
   height: 32px;
@@ -337,7 +346,7 @@ avatar {
     height: 34px;
     width: 34px;
     position: relative;
-    border: 1px solid var(--x-primary);
+    border: 2px solid var(--x-primary);
     border-radius: 99em;
     padding: 4px;
   }

@@ -11,13 +11,13 @@
   user-select: none;
   will-change: transform, height;
   overflow: hidden;
-  box-shadow: 0px 0px 24px -10px rgba(0, 0, 0, 1);
+  box-shadow: 0px 0px 18px -10px rgba(0, 0, 0, 1);
   z-index: 2;
 
-  header #open-audio-streams {
+  header #profile-open {
     position: absolute;
-    right: 16px;
-    top: 16px;
+    right: 14px;
+    top: 14px;
   }
 
   .empty-state {
@@ -26,28 +26,29 @@
     grid-template-rows: 100%;
     align-items: center;
     justify-content: center;
-    height: 100%;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
   }
 
   .empty-state > div {
     display: block;
-    max-width: 500px;
-    min-height: 100%;
     margin: auto;
     padding: 16px 10px;
     line-height: 20px;
-  }
-
-  .empty-state > div svg {
-    width: 60px;
-    height: 60px;
-    display: block;
-    margin: 20px auto;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 500px;
+    width: auto;
   }
 
   #input {
     position: relative;
-    padding: 12px;
+    padding: 11px;
     background: var(--x-background-darker);
     border-radius: 6px;
     height: auto;
@@ -76,7 +77,7 @@
     width: 100%;
     font-size: 16px;
     outline: none;
-    padding-right: 32px;
+    padding-right: 64px;
     z-index: 2;
     line-height: 22px;
     max-height: 250px;
@@ -85,8 +86,14 @@
 
   #input #send-message {
     position: absolute;
-    bottom: 12px;
-    right: 12px;
+    bottom: 4px;
+    right: 42px;
+  }
+
+  #input #open-streams {
+    position: absolute;
+    bottom: 4px;
+    right: 6px;
   }
 
   #input .placeholder-text {
@@ -181,13 +188,16 @@ body.moving * {
 
 
 body[hardware="mobile"] {
-  #messages header #open-audio-streams {
+  #messages header #open-streams {
     top: 76px;
   }
 
-  #messages .empty-state {
-    width: 80%;
-    margin: auto;
+  #messages #input {
+    max-width: 90vw;
+  }
+
+  #messages .empty-state > div {
+    min-width: 80vw;
   }
 }
 

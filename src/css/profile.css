@@ -33,14 +33,14 @@
 #profile-open {
   width: fit-content;
   background: transparent;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
 }
 
 #profile-close {
   position: absolute;
-  right: 0;
-  top: 0;
+  right: 4px;
+  top: 4px;
   width: 34px;
   height: 50px;
   border-radius: 12px;
@@ -52,8 +52,8 @@
 
 body[platform="ios"] {
   #profile-open {
-    margin-top: 48px;
-    margin-right: 10px;
+    margin-top: 58px;
+    margin-right: 6px;
   }
 
   #profile {

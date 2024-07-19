@@ -174,11 +174,6 @@ async function Sidebar (props) {
           svg({ class: 'app-icon' },
             use({ 'xlink:href': '#plus-icon' })
           )
-        ),
-        button({ id: 'profile-open', data: { event: 'profile-open' } },
-          svg({ class: 'app-icon' },
-            use({ 'xlink:href': '#profile-icon' })
-          )
         )
       )
     ),

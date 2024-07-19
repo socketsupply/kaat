@@ -38,33 +38,27 @@ body[hardware="mobile"] {
       justify-content: end;
       margin: 0;
       width: 280px;
-      padding-right: 10px;
+      padding-right: 8px;
 
       button#create-channel-open,
       button#profile-open {
         place-self: end;
-
-        svg {
-          width: 32px;
-          height: 32px;
-          padding: 6px;
-        }
       }
     }
   }
  
   > .content {
     width: 280px;
-    padding: 20px;
+    padding: 14px;
   }
 
   .channel {
     padding: 8px;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     font-size: 16px;
     border-radius: 8px;
     position: relative;
-    height: 34px;
+    height: 36px;
     transition: background .1s ease;
 
     button {
@@ -72,6 +66,8 @@ body[hardware="mobile"] {
       right: 8px;
       top: 6px;
       display: none;
+      width: 24px;
+      height: 24px;
     }
 
     &[data-active="true"] {
@@ -88,4 +84,9 @@ body[hardware="mobile"] {
   }
 }
 
-
+body[platform="ios"] {
+  #create-channel-open {
+    top: 24px;
+    position: relative;
+  }
+}

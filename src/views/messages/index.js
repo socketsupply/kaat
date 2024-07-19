@@ -7,6 +7,7 @@ import { register } from '../../lib/component.js'
 import { Spring } from '../../lib/spring.js'
 
 import Avatar from '../../components/avatar.js'
+import Text from '../../components/text.js'
 import RelativeTime from '../../components/relative-time.js'
 
 let signal // an interval that advertises we are online
@@ -65,19 +66,31 @@ async function VirtualMessages (props) {
   }
 
   if (rows.length === 0) {
+    const { data: dataPeer } = await props.db.state.get('peer')
+    const { data: dataChannel } = await props.db.channels.get(dataPeer.channelId)
+
+    console.log(dataChannel)
+
     rows = div({ class: 'empty-state' },
       div({ onclick },
-        svg({ class: 'empty-state-icon' },
-          use({ 'xlink:href': '#cat-icon' })
-        ),
-        'Invite your friends by sharing this channel\'s access token. Get it by clicking ',
-        a({ href: '#', data: { event: 'manage-channel', value: props.data.id } }, 'here'),
-        ' to open this channel\'s settings.',
+        'Invite friends to this channel by sharing this access token.',
         br(),
         br(),
-        'To accept a channel invite, click ',
+        Text({
+          errorMessage: 'Nope',
+          label: 'Access Token',
+          data: { slot: 'accessToken' },
+          type: 'password',
+          icon: 'copy-icon',
+          iconEvent: 'copy',
+          value: dataChannel.accessToken,
+          placeholder: 'fa00 d486 2e27 4eec'
+        }),
+        br(),
+        br(),
+        'Accept an invite by clicking ',
         a({ href: '#', data: { event: 'create-channel-open' } }, 'here'),
-        ' to create a new channel using the access token that was shared with you.'
+        ', use the access token that was shared with you.'
       )
     )
   }
@@ -662,7 +675,7 @@ async function Messages (props) {
       onSendPress()
     }
 
-    if (el = match('#open-audio-streams')) {
+    if (el = match('#open-streams')) {
       const elModalAudio = document.getElementById('audio-streams')
 
       if (elModalAudio.classList.contains('open')) {
@@ -717,9 +730,9 @@ async function Messages (props) {
   return [
     header({ class: 'primary draggable', onclick },
       span({ class: 'title' }, '#', dataChannel.label),
-      button({ id: 'open-audio-streams' },
+      button({ id: 'profile-open', data: { event: 'profile-open' } },
         svg({ class: 'app-icon' },
-          use({ 'xlink:href': '#talk-icon' })
+          use({ 'xlink:href': '#settings-icon' })
         )
       )
     ),
@@ -728,7 +741,7 @@ async function Messages (props) {
       //
       // The thing that actually handles rendering the messages
       //
-      await Messages.VirtualMessages({ data: { id: dataPeer.channelId }, rows }),
+      await Messages.VirtualMessages({ data: { id: dataPeer.channelId }, db, rows }),
 
       //
       // The input area
@@ -738,11 +751,11 @@ async function Messages (props) {
 
         div({ id: 'input-message', contenteditable: 'true', onkeydown, onkeyup, onpaste }),
 
-        /* button({ id: 'send-file' },
+        button({ id: 'open-streams' },
           svg({ class: 'app-icon' },
-            use({ 'xlink:href': '#file-icon' })
+            use({ 'xlink:href': '#talk-icon' })
           )
-        ), */
+        ),
 
         button({ id: 'send-message' },
           svg({ class: 'app-icon' },
