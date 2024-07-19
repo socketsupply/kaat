@@ -1,4 +1,5 @@
 import path from 'socket:path'
+import * as mime from 'socket:mime'
 import { sha256 } from 'socket:network'
 // import { LLM } from 'socket:ai'
 
@@ -524,6 +525,52 @@ async function Messages (props) {
     clearEmptyState()
   }
 
+  const publishImage = async (buf, fileInfo) => {
+    const opts = {
+      previousId: null,
+      meta: fileInfo
+    }
+
+    let message
+
+    try {
+      const sizeBeforeCompression = buf.byteLength
+
+      const compress = new Compressor({ type: fileInfo.type })
+      const { bytes } = await compress.from(buf)
+      const sizeAfterCompression = bytes.byteLength
+
+      const sizeReduction = sizeBeforeCompression - sizeAfterCompression
+      const reductionPercentage = (sizeReduction / sizeBeforeCompression) * 100
+
+      console.log(`Image reduced by ${sizeReduction} bytes (${reductionPercentage.toFixed(2)}%).`)
+
+      const Mb = bytes / (1024 * 1024)
+
+      if (Mb > 1) { // TODO(@heapwolf): could make this a limit in the channel settings.
+        // TODO(@heapwolf): put this into the UI, maybe even replace the image with it.
+        console.log(`Image too big (${Mb}Mb), you\'ll spam the network and get rate limited.`)
+        return
+      }
+
+      message = bytes
+
+      opts.meta.mime = fileInfo.type
+      opts.meta.hash = await sha256(bytes)
+      opts.meta.ts = Date.now()
+      opts.meta.name = fileInfo.pathname 
+    } catch (err) {
+      console.warn(err.message)
+      return
+    }
+
+    const { data: dataPeer } = await db.state.get('peer')
+    const subcluster = net.subclusters[dataPeer.channelId]
+    if (!subcluster) return
+
+    await subcluster.emit('message', message, opts)
+  }
+
   const publishImages = async () => {
     const images = [...this.querySelectorAll('img[src]')]
 
@@ -534,68 +581,51 @@ async function Messages (props) {
       // TODO(@heapwolf) get last messageId to use as previousId using readAll({ reverse: true, limit: 1 })
 
       for (const image of images) {
-        const opts = {
-          previousId: null,
-          meta: {}
+        const response = await fetch(image.src)
+        const blob = await response.blob()
+        let type = 'image/generic'
+
+        if (!blob) {
+          console.warn('Something went wrong reading this image')
+          return
         }
 
-        let message
-
-        try {
-          const response = await fetch(image.src)
-          const blob = await response.blob()
-          let type = 'image/generic'
-
-          if (!blob) {
-            console.warn('Something went wrong reading this image')
-            continue
-          }
-
-          const buf = await blob.arrayBuffer()
-          const sizeBeforeCompression = buf.byteLength
-
-          if (blob.type && blob.type !== 'text/xml') {
-            type = blob.type
-          }
-
-          const compress = new Compressor({ type })
-          const { bytes } = await compress.from(buf)
-          const sizeAfterCompression = bytes.byteLength
-
-          const sizeReduction = sizeBeforeCompression - sizeAfterCompression
-          const reductionPercentage = (sizeReduction / sizeBeforeCompression) * 100
-
-          console.log(`Image reduced by ${sizeReduction} bytes (${reductionPercentage.toFixed(2)}%).`)
-
-          const Mb = bytes / (1024 * 1024)
-
-          if (Mb > 1) { // TODO(@heapwolf): could make this a limit in the channel settings.
-            // TODO(@heapwolf): put this into the UI, maybe even replace the image with it.
-            console.log(`Image too big (${Mb}Mb), you\'ll spam the network and get rate limited.`)
-            return
-          }
-
-          message = bytes
-
-          opts.meta.mime = type
-          opts.meta.hash = await sha256(bytes)
-          opts.meta.ts = Date.now()
-          opts.meta.name = response.url.split(/\/|\\/).pop()
-        } catch (err) {
-          console.warn(err.message)
-          continue
+        if (blob.type && blob.type !== 'text/xml') {
+          type = blob.type
         }
 
-        const { data: dataPeer } = await db.state.get('peer')
-        const subcluster = net.subclusters[dataPeer.channelId]
-        if (!subcluster) continue
+        const pathname = response.url.split(/\/|\\/).pop()
+        const buf = await blob.arrayBuffer()
 
+        await publishImage(buf, { type, pathname })
         clearEmptyState()
-
         image.parentNode.removeChild(image)
-        await subcluster.emit('message', message, opts)
       }
     }
+  }
+  
+  const onSendFile = async () => {
+    const pickerOpts = {
+      types: [
+        {
+          description: 'Select an Image',
+          accept: {
+            'image/*': ['.png', '.gif', '.jpeg', '.jpg'],
+          }
+        }
+      ],
+      excludeAcceptAllOption: true,
+      multiple: false
+    }
+
+    const [fileHandle] = await window.showOpenFilePicker(pickerOpts)
+    if (!fileHandle) return
+
+    const file = await fileHandle.getFile()
+    const pathname = fileHandle.name
+    const type = await mime.lookup(pathname)
+    const buf = await file.arrayBuffer()
+    publishImage(buf, { type, pathname })
   }
 
   const onSendPress = async () => {
@@ -675,6 +705,10 @@ async function Messages (props) {
       onSendPress()
     }
 
+    if (el = match('#send-file')) {
+      onSendFile()
+    }
+
     if (el = match('#open-streams')) {
       const elModalAudio = document.getElementById('audio-streams')
 
@@ -750,6 +784,12 @@ async function Messages (props) {
         span({ class: 'placeholder-text show' }, 'Enter your message...'),
 
         div({ id: 'input-message', contenteditable: 'true', onkeydown, onkeyup, onpaste }),
+
+        button({ id: 'send-file' },
+          svg({ class: 'app-icon' },
+            use({ 'xlink:href': '#plus-icon' })
+          )
+        ),
 
         button({ id: 'open-streams' },
           svg({ class: 'app-icon' },

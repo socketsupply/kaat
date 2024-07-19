@@ -168,12 +168,12 @@ async function App () {
       console.log(el.dataset.value)
     }
 
-    if (el?.dataset.event === 'change-model') {
+    /* if (el?.dataset.event === 'change-model') {
       event.stopPropagation()
 
       const [fileHandle] = await window.showOpenFilePicker(pickerOpts)
       el.value = fileHandle.name
-    }
+    } */
 
     if (el?.dataset.event === 'copy') {
       event.stopPropagation()
