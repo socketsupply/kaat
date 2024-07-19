@@ -202,16 +202,22 @@ const network = async db => {
     const now = Date.now()
     let first = false
 
+    //
+    // If you've never sync'd before, you can ask for 6 hours of data from
+    // other peers. If we have synced with a peer before we can just ask for
+    // data that they have seen since then, this will avoid the risk of
+    // spamming them and getting rate-limited.
+    //
     if (!sync[peer.peerId]) {
-      sync[peer.peerId] = now
+      sync[peer.peerId] = now - socket.MAX_CACHE_TTL
       first = true
     }
 
     const lastSyncSeconds = (now - sync[peer.peerId]) / 1000
 
     if (first || now - sync[peer.peerId] > 6000) {
-      console.log(`-> SYNC SEND (peerId=${peer.peerId.slice(0, 6)}, address=${peer.address}:${peer.port}, lastSync=${lastSyncSeconds.toFixed(2)} seconds ago)`)
-      socket.sync(peer.peerId)
+      socket.sync(peer.peerId, sync[peer.peerId])
+      console.log(`-> SYNC SEND (peerId=${peer.peerId.slice(0, 6)}, address=${peer.address}:${peer.port}, since=${lastSyncSeconds} seconds ago)`)
       sync[peer.peerId] = now
     }
   })
