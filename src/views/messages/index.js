@@ -572,7 +572,8 @@ async function Messages (props) {
   }
 
   const publishImages = async () => {
-    const images = [...this.querySelectorAll('img[src]')]
+    const elInputMessage = document.getElementById('input-message')
+    const images = [...elInputMessage.querySelectorAll('img[src]')]
 
     //
     // Handle any pasted images by iterating over the image nodes in the input
