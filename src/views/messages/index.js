@@ -33,6 +33,8 @@ async function Message (props = {}) {
     image.onload = () => window.URL.revokeObjectURL(vurl)
   }
 
+  this.setAttribute('timestamp', props.timestamp)
+
   return [
     await Avatar(props),
     div({ class: 'message' },
@@ -296,6 +298,26 @@ async function Messages (props) {
  
   const elChannels = document.querySelector('channels')
 
+  const insertNode = (parent, timestamp, child) => {
+    const messages = Array.from(parent.children)
+
+    let inserted = false
+
+    for (let i = 0; i < messages.length; i++) {
+      const currentTimestamp = parseInt(messages[i].getAttribute('timestamp'), 10)
+
+      if (currentTimestamp <= timestamp) {
+        parent.insertBefore(child, messages[i])
+        inserted = true
+        break
+      }
+    }
+
+    if (!inserted) {
+      parent.appendChild(child)
+    }
+  }
+
   const onMessage = async (value, packet) => {
     //
     // There are a few high-level conditions that we should check before accepting data
@@ -337,9 +359,8 @@ async function Messages (props) {
 
     const messageBuffer = parent.querySelector('.buffer-content')
 
-    // should probably insert rather than append
     if (messageBuffer) {
-      messageBuffer.prepend(child)
+      insertNode(messageBuffer, message.ts, child)
       clearEmptyState()
     }
   }
@@ -371,17 +392,8 @@ async function Messages (props) {
 
   const elPeerList = document.getElementById('peer-list')
 
-  net.subclusters[dataPeer.channelId].on('#join', (...args) => {
-    elPeerList.render()
-  })
-
-  net.subclusters[dataPeer.channelId].on('#leave', (...args) => {
-    elPeerList.render()
-  })
-
-  net.subclusters[dataPeer.channelId].on('#connection', (...args) => {
-    elPeerList.render()
-  })
+  net.socket.on('#disconnection', () => elPeerList.render())
+  net.socket.on('#connection', () => elPeerList.render())
 
   clearInterval(signal)
 

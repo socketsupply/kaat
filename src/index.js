@@ -159,6 +159,9 @@ async function App () {
         await net.createChannel(elModal.value)
         const elChannels = document.querySelector('channels')
         elChannels.render()
+
+        const elPeerList = document.querySelector('peer-list')
+        elPeerList.render()
       }
 
       return

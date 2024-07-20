@@ -202,15 +202,22 @@ async function Profile (props) {
 
       const scale = 0.9 + (0.1 * progress ** vProfileTransformMag)
 
+      // ensure that the overlay doesnt overlap if the window is resized
+      if (progress > 0.8) {
+        this.el.style.zIndex = -1
+      } else {
+        this.el.style.zIndex = 1
+      }
+
       if (!elMain) {
         elMain = document.getElementById('main')
       }
 
       if (!isMobile) {
         document.body.style.background = `rgba(0, 0, 0, ${Math.min(1, Math.max(0, opacity))})`
+        elMain.style.opacity = 1.2 - opacity 
       }
 
-      elMain.style.opacity = 1.2 - opacity 
       elMain.style.transform = `scale(${Math.min(scale, 1)})`
       elMain.style.transformOriginY = `${vProfileTransformOrigin}%`
     },
