@@ -204,6 +204,7 @@ const network = async db => {
     // We select the lexicographically higher peerId to kick-off the sync.
     //
     const now = Date.now()
+    const key = [peer.address, peer.port].join(':')
     let first = false
 
     //
@@ -212,17 +213,17 @@ const network = async db => {
     // data that they have seen since then, this will avoid the risk of
     // spamming them and getting rate-limited.
     //
-    if (!sync[peer.peerId]) {
-      sync[peer.peerId] = now - socket.MAX_CACHE_TTL
+    if (!sync[key]) {
+      sync[key] = now - socket.MAX_CACHE_TTL
       first = true
     }
 
-    const lastSyncSeconds = (now - sync[peer.peerId]) / 1000
+    const lastSyncSeconds = (now - sync[key]) / 1000
 
-    if (first || now - sync[peer.peerId] > 6000) {
-      socket.sync(peer.peerId, sync[peer.peerId])
-      console.log(`-> SYNC SEND (peerId=${peer.peerId.slice(0, 6)}, address=${peer.address}:${peer.port}, since=${lastSyncSeconds} seconds ago)`)
-      sync[peer.peerId] = now
+    if (first || now - sync[key] > 6000) {
+      socket.sync(peer.peerId, sync[key])
+      console.log(`-> SYNC SEND (peerId=${peer.peerId.slice(0, 6)}, address=${key}, since=${lastSyncSeconds} seconds ago)`)
+      sync[key] = now
     }
   })
 

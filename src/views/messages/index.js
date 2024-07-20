@@ -314,7 +314,7 @@ async function Messages (props) {
     }
 
     if (!inserted) {
-      parent.appendChild(child)
+      parent.prepend(child)
     }
   }
 
