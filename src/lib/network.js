@@ -97,7 +97,7 @@ const network = async db => {
     socket = await createNetwork(dataPeer)
   }
 
-  window.addEventListener('focus', () => {
+  window.addEventListener('focus', async () => {
     if (socket) socket.reconnect()
   })
 
@@ -149,7 +149,7 @@ const network = async db => {
   // Don't listen to debug in production, it can strain the CPU.
   //
   socket.on('#debug', (pid, str, ...args) => {
-    /* pid = pid.slice(0, 6)
+    pid = pid.slice(0, 6)
 
     if (str.includes('JOIN')) {
       console.log(pid, str, ...args)
@@ -163,7 +163,7 @@ const network = async db => {
       console.log(pid, str, ...args)
     }
 
-    if (str.includes('<- STREAM')) {
+    /* if (str.includes('<- STREAM')) {
       console.log(pid, str, ...args)
     }
 
@@ -180,10 +180,6 @@ const network = async db => {
     }
 
     if (str.includes('INTRO')) {
-      console.log(pid, str, ...args)
-    }
-
-    if (str.includes('CONNECT')) {
       console.log(pid, str, ...args)
     }
 

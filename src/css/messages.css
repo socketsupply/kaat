@@ -77,7 +77,7 @@
     width: 100%;
     font-size: 16px;
     outline: none;
-    padding-right: 90px;
+    padding-right: 26px;
     z-index: 2;
     line-height: 22px;
     max-height: 250px;
@@ -85,21 +85,57 @@
   }
 
   #input #send-message {
+    opacity: 1;
     position: absolute;
+    transition: transform .2s ease, opacity: .2s ease, z-index .2s ease;
     bottom: 4px;
     right: 76px;
   }
 
   #input #open-streams {
+    opacity: 1;
     position: absolute;
+    transition: transform .2s ease, opacity .2s ease, z-index .2s ease;
     bottom: 4px;
     right: 42px;
   }
 
   #input #send-file {
+    opacity: 1;
     position: absolute;
+    transition: right .2s ease;
     bottom: 4px;
     right: 6px;
+  }
+
+  &.dirty {
+    #input #send-message {
+      transition: right .2s ease;
+      right: 6px;
+    }
+
+    #input #open-streams,
+    #input #send-file {
+      transition: transform .2s ease, opacity .2s ease, z-index .2s ease;
+      transform: translateX(20%);
+      opacity: 0;
+      z-index: -1;
+    }
+  }
+
+  &.clean {
+    #input #send-message {
+      transition: bottom .2s ease, right .2s ease;
+      right: 76px;
+    }
+
+    #input #open-streams,
+    #input #send-file {
+      transition: transform .2s ease, opacity .2s ease, z-index .2s ease;
+      transform: translateX(0%);
+      opacity: 1;
+      z-index: 1;
+    }
   }
 
   #input .placeholder-text {

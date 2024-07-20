@@ -72,8 +72,6 @@ async function VirtualMessages (props) {
     const { data: dataPeer } = await props.db.state.get('peer')
     const { data: dataChannel } = await props.db.channels.get(dataPeer.channelId)
 
-    console.log(dataChannel)
-
     rows = div({ class: 'empty-state' },
       div({ onclick },
         'Invite friends to this channel by sharing this access token.',
@@ -696,9 +694,13 @@ async function Messages (props) {
     const hasText = elInputMessage.textContent.length
 
     if (hasImage || isEditing || hasText) {
+      this.classList.add('dirty')
+      this.classList.remove('clean')
       elPlaceholder.classList.add('hide')
       elPlaceholder.classList.remove('show')
     } else {
+      this.classList.add('clean')
+      this.classList.remove('dirty')
       elPlaceholder.classList.add('show')
       elPlaceholder.classList.remove('hide')
     }
@@ -707,9 +709,14 @@ async function Messages (props) {
   //
   // On desktop, enter should send, but shift-enter should create a new line.
   //
-  const onkeydown = (e) => {
+  let keydownDebouncer = null
+
+  const onkeydown = e => {
     if (isMobile) return // only the button should send on mobile
-    if (e.key === 'Enter' && !e.shiftKey) onSendPress()
+    if (e.key === 'Enter' && !e.shiftKey) {
+      clearTimeout(keydownDebouncer)
+      keydownDebouncer = setTimeout(() => onSendPress(), 32)
+    }
     setTimeout(() => setPlaceholderText(), 2)
   }
 
@@ -739,13 +746,8 @@ async function Messages (props) {
     }
   }
 
-  const onkeyup = (e) => {
-    setTimeout(() => setPlaceholderText(), 2)
-  }
-
-  const onpaste = (e) => {
-    hidePlaceholderText()
-  }
+  const onkeyup = () => setTimeout(() => setPlaceholderText(), 2)
+  const onpaste = () => hidePlaceholderText()
 
   //
   // The fist time this component renders we can get the data for the current
