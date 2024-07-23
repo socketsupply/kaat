@@ -1,6 +1,7 @@
 import path from 'socket:path'
 import * as mime from 'socket:mime'
 import { sha256 } from 'socket:network'
+import os from 'socket:os'
 // import { LLM } from 'socket:ai'
 
 import { Compressor } from '../../lib/compressor.js'
@@ -673,11 +674,15 @@ async function Messages (props) {
     //
     elInputMessage.innerHTML = ''
     setPlaceholderText()
+    if (os.platform() === 'android') {
+      // XXX(@jwerle): not sure about iOS
+      elInputMessage.focus()
+    }
 
     //
     // Try to send it!
     //
-    publishText(data)
+    await publishText(data)
   }
 
   const hidePlaceholderText = () => {
