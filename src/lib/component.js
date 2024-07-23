@@ -1,8 +1,11 @@
 /**
  *
+ * # Summary
+ *
  * A simple React-like component system using plain JavaScript.
  *
- * Notes:
+ * # Notes
+ *
  *   - Absolutely no build step required
  *   - No DSLs. JSX-like syntax, but 100% JavaScript semantics
  *   - The same lifecycle events as web components
@@ -13,48 +16,63 @@
  *   - Enforance React style component grouping/namespacing
  *   - Insde the component, 'this' is the dom element
  *
- * Usage:
+ * # Usage Example
+ *
+ * ## users.js
  *
  * ```js
- * function CounterA (props, ...children) {
+ * import { register, createRoot } from 'component.js'
+ *
+ * function User (props, ...children) {
  *   this.state.count ??= 0
  *
  *   const onclick = () => {
  *     this.state.count++
  *   }
  *
- *   return div(`count=${this.state.count}`, onclick)
+ *   return div(`count=${this.state.count}, name=${props.name}`, onclick)
  * }
  *
- * async function CounterB (props, ...children) {
+ * Users.User = register(User)
+ *
+ * async function Users (props, ...children) {
  *   await sleep(16) // do something async if you want
  *
- *   return (
+ *   return props.users.map(user =>
  *     div({ style: { border: '1px solid blue' } },
- *       span('counter=', b(props.value), '!')
+ *       User(user)
  *     )
  *   )
  * }
+ *
+ * export default register(Users)
+ *
+ * ```
+ *
+ * ## index.js
+ *
+ * ```js
+ *
+ * import { register, createRoot } from 'component.js'
+ * import Users from './users.js'
  *
  * async function App () {
  *   let count = 0
  *
  *   const onclick = (event, match) => {
- *     if (!match('#b')) return
+ *     if (!match('user')) return
  *
- *     event.target.render({ value: String(++count) }) // you can manually render with new props
+ *     event.target.render({ value: String(++count) })
  *   }
  *
  *   return (
  *     div({ style: { border: '1px solid red', fontFamily: 'monospace', cursor: 'pointer' } },
- *       CounterA({ id: 'a' }),
- *       await CounterB({ id: 'b', value: '0' }),
+ *       await Users({ users: [{ name: 'alice' }, { name: 'bob' }]),
  *       onclick,
  *     )
  *   )
  * }
  *
- * register({ CounterA, CounterB })
  * createRoot(App, document.body)
  * ```
  */
@@ -183,11 +201,7 @@ export function register (Fn) {
       el.emit = (s, detail) => el.dispatchEvent(new CustomEvent(s, { detail }))
 
       function apply (args) {
-        let result
-
-        try {
-          result = target.apply(el, args)
-        } catch (err) { throw err }
+        let result = target.apply(el, args)
 
         if (result?.constructor.name === 'Promise') {
           result.then(res => collect(el, res)).catch(err => { throw err })

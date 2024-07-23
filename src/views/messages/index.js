@@ -69,6 +69,25 @@ async function VirtualMessages (props) {
     }
   }
 
+  let rowFetchLock = null
+
+  const fetchMoreRows = () => {
+    if (rowFetchLock) return
+
+    rowFetchLock = setTimeout(() => {
+      rowFetchLock = null
+    }, 1024)
+
+    this.dispatchEvent(new CustomEvent('scroll', { bubbles: true }))
+  }
+
+  const onscroll = (event, match) => {
+    const container = this.firstElementChild
+    const ceil = container.scrollHeight - container.clientHeight
+    const top = 100 + (container.scrollTop / ceil) * 100
+    if (top < 20) fetchMoreRows()
+  }
+
   if (rows.length === 0) {
     const { data: dataPeer } = await props.db.state.get('peer')
     const { data: dataChannel } = await props.db.channels.get(dataPeer.channelId)
@@ -85,6 +104,7 @@ async function VirtualMessages (props) {
           type: 'password',
           icon: 'copy-icon',
           iconEvent: 'copy',
+          readOnly: 'true',
           value: dataChannel.accessToken,
           placeholder: 'fa00 d486 2e27 4eec'
         }),
@@ -97,7 +117,7 @@ async function VirtualMessages (props) {
     )
   }
 
-  return div({ id: 'message-buffer', onclick },
+  return div({ id: 'message-buffer', onclick, onscroll },
     div({ class: 'buffer-content' }, rows)
   )
 }
@@ -130,6 +150,7 @@ async function Messages (props) {
   let isPanning = false
   let lastContent = null
   let sidebarWidth = 280
+  let lastKeyRead = null
 
   //
   // Enable some fun interactions on the messages element
@@ -314,6 +335,40 @@ async function Messages (props) {
 
     if (!inserted) {
       parent.prepend(child)
+    }
+  }
+
+  const onscroll = async () => {
+    const { data: dataPeer } = await props.db.state.get('peer')
+    const { data: dataMessages } = await db[dataPeer.channelId].readAll({
+      lte: lastKeyRead,
+      limit: 32,
+      reverse: true
+    })
+
+    if (dataMessages) {
+      let keys = [...dataMessages.keys()]
+      let values = [...dataMessages.values()]
+
+      lastKeyRead = keys.at(-1)
+
+      const messages = await Promise.all(values.map(message => {
+        return prepareMessageForReading(message)
+      }))
+
+      let parent = elChannels.state[dataPeer.channelId]
+
+      if (!parent) { // no prior channel switching, fall back
+        parent = document.querySelector('virtual-messages')
+      }
+
+      const messageBuffer = parent.querySelector('.buffer-content')
+      if (!parent || !messageBuffer) return
+
+      for (const message of messages) {
+        const elMessage = await Messages.Message(message)
+        requestAnimationFrame(() => messageBuffer.appendChild(elMessage))
+      }
     }
   }
 
@@ -759,7 +814,7 @@ async function Messages (props) {
   // channel from the datatabase and pass that to the virtual list component.
   //
   const { data: dataMessages } = await db[dataPeer.channelId].readAll({
-    limit: 5000, // TODO(@heapwolf) set up demand-paging
+    limit: 32, // TODO(@heapwolf) set up demand-paging
     reverse: true
   })
 
@@ -769,7 +824,12 @@ async function Messages (props) {
   let rows = []
 
   if (dataMessages) {
-    const messages = [...dataMessages.values()].map(message => {
+    const keys = [...dataMessages.keys()]
+    const values = [...dataMessages.values()]
+
+    lastKeyRead = keys.slice(-1)[0]
+
+    const messages = values.map(message => {
       return prepareMessageForReading(message)
     })
 
@@ -787,11 +847,11 @@ async function Messages (props) {
       button({ id: 'profile-open', data: { event: 'profile-open' } },
         svg({ class: 'app-icon' },
           use({ 'xlink:href': '#settings-icon' })
-        )
+        .scrollTop)
       )
     ),
 
-    div({ class: 'content' },
+    div({ class: 'content', onscroll },
       //
       // The thing that actually handles rendering the messages
       //

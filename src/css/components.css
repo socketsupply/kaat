@@ -173,6 +173,12 @@ text input {
   background-color: var(--x-input-background);
 }
 
+body[hardware="mobile"] {
+  text input[type="password"] {
+    letter-spacing: 1.4px;
+  }
+}
+
 text input:hover {
   background-color: var(--x-input-background-hover);
 }

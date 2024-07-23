@@ -97,17 +97,20 @@ const network = async db => {
     socket = await createNetwork(dataPeer)
   }
 
-  window.addEventListener('focus', async () => {
+  globalThis.addEventListener('applicationresume', () => {
     if (socket) socket.reconnect()
   })
 
+  globalThis.addEventListener('applicationpause', () => {
+  })
+
   globalThis.addEventListener('online', () => {
-    document.body.setAttribute('network', 'online')
+    console.log('ONLINE')
     if (socket) socket.reconnect()
   })
 
   globalThis.addEventListener('offline', () => {
-    document.body.setAttribute('network', 'offline')
+    console.log('OFFLINE')
   })
 
   if (Object.keys(subclusters).length === 0) {
