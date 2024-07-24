@@ -28,7 +28,7 @@ export class Stream {
     this.queue = []
     this.maxQueueSize = 2048
     this.isLocal = false
-    this.isStopped = false
+    this.isStopped = true
     this.sourceBuffer = null
     this.audioElement = null
 

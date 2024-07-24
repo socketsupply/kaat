@@ -3,7 +3,8 @@ import Button from './button.js'
 
 function Modal (props, ...children) {
   const {
-    buttons = []
+    buttons = [],
+    closable = true
   } = props
 
   let escapeListener
@@ -89,7 +90,7 @@ function Modal (props, ...children) {
         header({ class: 'draggable' },
           span({ class: 'spacer' }),
           span({ class: 'title' }, props.header || 'Dialog'),
-          button({ class: 'close' },
+          props.closable ?? button({ class: 'close' },
             svg({ class: 'app-icon' },
               use({ 'xlink:href': '#close-icon' })
             )
@@ -98,15 +99,23 @@ function Modal (props, ...children) {
         main({ class: 'content' }, ...children),
         footer(buttons.map(config => {
           const data = {}
+          let icon = null
           if (config.value) data.value = config.value
           if (config.event) data.event = config.event
+          if (config.icon) {
+            icon = svg({ class: 'app-icon' },
+              use({ 'xlink:href': `#${config.icon}` })
+            )
+          }
 
           return Button(
             {
               class: config.class || 'modal-button',
+              type: config.icon ? 'icon' : '',
+              title: config.label,
               data
             },
-            config.label
+            icon || config.label
           )
         }))
       )

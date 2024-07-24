@@ -162,22 +162,34 @@ async function AudioStreams (props) {
   const onclick = (_, match) => {
     const el = match('[data-event]')
 
-    if (el?.dataset.event === 'stop-stream') {
-      stopLocalStream()
+    if (el?.dataset.event === 'toggle-stream') {
+      const elButtonToggleStream = this.querySelector('[data-event="toggle-stream"] use')
+      const elButtonToggleModal = document.querySelector('#open-streams use')
+
+      if (localStream.isStopped) {
+        elButtonToggleStream.setAttribute('xlink:href', '#talk-circle-icon')
+        elButtonToggleModal.setAttribute('xlink:href', '#talk-active-icon')
+        startLocalStream()
+      } else {
+        elButtonToggleStream.setAttribute('xlink:href', '#talk-circle-muted-icon')
+        elButtonToggleModal.setAttribute('xlink:href', '#talk-icon')
+        stopLocalStream()
+      }
     }
 
-    if (el?.dataset.event === 'start-stream') {
-      startLocalStream()
+    if (el?.dataset.event === 'close') {
+      this.firstElementChild.close()
     }
   }
 
   return Modal(
     {
       id: 'audio-streams',
-      header: 'Audio Streams',
+      header: 'Active Members',
+      closable: false,
       buttons: [
-        { label: 'Stop', event: 'stop-stream' },
-        { label: 'Start', event: 'start-stream', class: 'confirm' }
+        { label: 'Minimize Member View', event: 'close', icon: 'minimize-icon' },
+        { label: 'Mute or Unmute Audio', event: 'toggle-stream', icon: 'talk-circle-muted-icon' }
       ],
       onclick
     },

@@ -52,7 +52,7 @@ modal .dialog {
 modal .dialog > header {
   height: 50px;
   display: grid;
-  grid-template-columns: 34px 1fr 34px;
+  grid-template-columns: 46px 1fr 46px;
   justify-content: center;
   align-content: center;
 
@@ -226,7 +226,7 @@ text[label] .x--text-invalid {
 
 /* Button */
 button {
-  place-self: end;
+  place-self: center;
   display: grid;
   align-content: center;
   justify-content: center;
@@ -261,6 +261,7 @@ button[type="accent"] {
 button[type="icon"] {
   width: 32px;
   height: 32px;
+  min-width: auto;
 }
 
 button.delete,

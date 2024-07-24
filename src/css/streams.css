@@ -5,6 +5,15 @@
 
     footer {
       justify-content: center;
+      gap: 20px;
+    }
+
+    footer button[type="icon"] {
+      svg {
+        width: 42px;
+        height: 42px;
+      }
+      background-color: transparent;
     }
   }
 
