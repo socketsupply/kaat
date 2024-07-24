@@ -1,80 +1,16 @@
 /**
  *
- * # Summary
+ * A simple, single-file React-like component system.
  *
- * A simple React-like component system using plain JavaScript.
+ * - JSX-like syntax, but 100% JS. No build step. No DSLs.
+ * - Works in any JavaScript environment (does SSR).
+ * - Web-component-like lifecycle events.
+ * - Components can be async/await, even async generators.
+ * - Components can return arrays or trees of dom nodes.
+ * - Enforce React's one component export per file rule.
+ * - Enforce React style component grouping/namespacing.
+ * - Insde the component, 'this' is the dom element.
  *
- * # Notes
- *
- *   - Absolutely no build step required
- *   - No DSLs. JSX-like syntax, but 100% JavaScript semantics
- *   - The same lifecycle events as web components
- *   - Components can be async/await, even async generators
- *   - Components return arrays or trees of dom nodes
- *   - Props are a zero cost abstraction
- *   - Enforce React's one component export per file rule
- *   - Enforance React style component grouping/namespacing
- *   - Insde the component, 'this' is the dom element
- *
- * # Usage Example
- *
- * ## users.js
- *
- * ```js
- * import { register, createRoot } from 'component.js'
- *
- * function User (props, ...children) {
- *   this.state.count ??= 0
- *
- *   const onclick = () => {
- *     this.state.count++
- *   }
- *
- *   return div(`count=${this.state.count}, name=${props.name}`, onclick)
- * }
- *
- * Users.User = register(User)
- *
- * async function Users (props, ...children) {
- *   await sleep(16) // do something async if you want
- *
- *   return props.users.map(user =>
- *     div({ style: { border: '1px solid blue' } },
- *       User(user)
- *     )
- *   )
- * }
- *
- * export default register(Users)
- *
- * ```
- *
- * ## index.js
- *
- * ```js
- *
- * import { register, createRoot } from 'component.js'
- * import Users from './users.js'
- *
- * async function App () {
- *   let count = 0
- *
- *   const onclick = (event, match) => {
- *     if (!match('user')) return
- *
- *     event.target.render({ value: String(++count) })
- *   }
- *
- *   return (
- *     div({ style: { border: '1px solid red', fontFamily: 'monospace', cursor: 'pointer' } },
- *       await Users({ users: [{ name: 'alice' }, { name: 'bob' }]),
- *       onclick,
- *     )
- *   )
- * }
- *
- * createRoot(App, document.body)
- * ```
  */
 
 /**
@@ -95,6 +31,79 @@ const tags = 'a,abbr,address,area,article,aside,audio,b,base,bdi,bdo,blockquote,
 const match = el => s => (el.matches ? el : el.parentElement).closest(s)
 
 /**
+ * Provides SSR by implementing the dom methods that are missing outside the browser.
+ */
+if (!globalThis.document) {
+  globalThis.Node = class Node {
+    children = []
+    parentRef = null
+    constructor (_type) {
+      this._type = _type
+      this.attributes = {}
+    }
+
+    set className (s) {
+      this.attributes.class = s
+    }
+
+    get innerHTML () {
+      return this.children.map(child => child.toString(1)).join('')
+    }
+
+    appendChild (node) {
+      this.children.push(node)
+    }
+
+    setAttribute (key, value) {
+      this.attributes[key] = value
+    }
+
+    setAttributeNS (_, key, value) {
+      this.attributes[key] = value
+    }
+
+    addEventListener () {}
+    toString (indentationLevel = 0) {
+      if (this._type === '#text') return this.attributes.text
+
+      const indent = indentationLevel === 0 ? '' : '  '.repeat(indentationLevel)
+      const attributes = Object.entries(this.attributes).map(([key, value]) => `${key}="${value}"`).join(' ')
+
+      const children = this.children.map(child => child.toString(indentationLevel + 1)).join('\n')
+      const hasElementChildren = this.children.some(child => child._type !== '#text')
+
+      if (hasElementChildren) {
+        return `${indent}<${this._type}${attributes ? ' ' + attributes : ''}>\n${children}\n${indent}</${this._type}>`
+      }
+
+      const childrenText = this.children.map(child => child.toString(indentationLevel)).join('')
+      return `${indent}<${this._type}${attributes ? ' ' + attributes : ''}>${childrenText}</${this._type}>`
+    }
+  }
+
+  const propHandler = {
+    set (target, property, value) {
+      if (property in target) {
+        target[property] = value
+      } else {
+        target.attributes[property] = value
+      }
+      return true
+    }
+  }
+
+  globalThis.document = {
+    createElementNS: (ns, t) => new Proxy(new globalThis.Node(t), propHandler),
+    createElement: t => new Proxy(new globalThis.Node(t), propHandler),
+    createTextNode: text => {
+      const node = new globalThis.Node('#text')
+      node.attributes.text = text
+      return node
+    }
+  }
+}
+
+/**
  * Creates an HTML element or uses an existing element.
  * @param {string|Function} t - The tag name or component function.
  * @param {...*} args - The arguments to pass to the element or component.
@@ -102,22 +111,27 @@ const match = el => s => (el.matches ? el : el.parentElement).closest(s)
  */
 const createElement = (t, ...args) => {
   if (['svg', 'use'].includes(t)) {
-    t = document.createElementNS('http://www.w3.org/2000/svg', t)
+    t = globalThis.document.createElementNS('http://www.w3.org/2000/svg', t)
   }
 
-  const el = typeof t === 'string' ? document.createElement(t) : t
+  const el = typeof t === 'string' ? globalThis.document.createElement(t) : t
 
   args.flat().forEach(c => {
     if (typeof c === 'string') {
-      el.appendChild(document.createTextNode(c))
+      el.appendChild(globalThis.document.createTextNode(c))
     } else if (c instanceof globalThis.Node) {
+      if (c.parentRef) {
+        const i = c.parentRef.children.findIndex(node => node === c)
+        c.parentRef.children.splice(i, 1)
+      }
+      if (!globalThis.window) c.parentRef = el // emulate move semantics
       el.appendChild(c)
-    } else if (typeof c === 'function' && c.name ) {
+    } else if (typeof c === 'function' && c.name) {
       const eventName = c.name.slice(2).toLowerCase()
       el.addEventListener(eventName, e => c(e, match(e.target)))
     } else if (typeof c === 'object' && c !== null) {
       Object.entries(c).forEach(([k, v]) => {
-        if (typeof v === 'function') { // allow listeners here to, why not
+        if (typeof v === 'function') {
           const eventName = v.name.slice(2).toLowerCase()
           el.addEventListener(eventName, e => v(e, match(e.target)))
         } else if (k === 'style' && typeof v === 'object') {
@@ -129,14 +143,14 @@ const createElement = (t, ...args) => {
             el.className = v
           }
         } else if (k === 'data') {
-          Object.entries(v).forEach(a => el.dataset[a[0]] = a[1])
+          Object.entries(v).forEach(a => (el.dataset[a[0]] = a[1]))
         } else if (el.tagName === 'use' || k === 'contenteditable') {
           if (k.includes('xlink')) {
-            el.setAttributeNS('http://www.w3.org/1999/xlink', k, v);
+            el.setAttributeNS('http://www.w3.org/1999/xlink', k, v)
           } else {
             el.setAttribute(k, v)
           }
-        } else if (k in el) {
+        } else if (k in el || !globalThis.window) {
           el[k] = v
         }
       })
@@ -161,7 +175,7 @@ const observables = []
  */
 export function register (Fn) {
   const collect = (el, tree) => [tree].flat().forEach(node => el.appendChild(node))
-  const hyphenate = (name) => name.match(/[A-Z][a-z0-9]*/g).join('-').toLowerCase()
+  const hyphenate = (name) => (name.match(/[A-Z][a-z0-9]*/g)?.join('-') ?? name).toLowerCase()
   const children = (args) => args.flat().filter(a => a instanceof globalThis.Node)
 
   globalThis[Fn.name] = new Proxy(Fn, {
@@ -175,50 +189,54 @@ export function register (Fn) {
     apply: (target, self, args) => {
       const el = createElement(hyphenate(Fn.name), ...args)
       const id = args[0]?.id || el.id || Fn.name
-
       if (!register.state[id]) register.state[id] = {}
-      el.state = new Proxy(register.state[id], { // re-render when state is updated.
-        set (target, property, value) {
-          let isUpdate = false
-          if (property in target) isUpdate = true
-          target[property] = value
 
-          if (isUpdate) {
-            clearTimeout(isUpdate)
-            isUpdate = setTimeout(() => el.render())
-          }
-          return true
+      if (globalThis.window) {
+        el.render = (updates) => {
+          el.innerHTML = ''
+          apply([{ ...args[0], ...updates }, ...children(args)])
         }
-      })
 
-      el.on = (s, fn) => {
-        const listener = e => fn.apply(el, [e, match(e.target)])
-        el.addEventListener(s, listener)
-        return listener
+        el.state = new Proxy(register.state[id], { // re-render when state is updated.
+          set (target, property, value) {
+            let isUpdate = false
+            if (property in target) isUpdate = true
+            target[property] = value
+
+            if (isUpdate) {
+              clearTimeout(isUpdate)
+              isUpdate = setTimeout(() => el.render())
+            }
+            return true
+          }
+        })
+
+        el.on = (s, fn) => {
+          const listener = e => fn.apply(el, [e, match(e.target)])
+          el.addEventListener(s, listener)
+          return listener
+        }
+
+        el.off = (s, fn) => el.removeEventListener(s, fn)
+        el.emit = (s, detail) => el.dispatchEvent(new CustomEvent(s, { detail }))
+
+        observables.push(el)
       }
 
-      el.off = (s, fn) => el.removeEventListener(s, fn)
-      el.emit = (s, detail) => el.dispatchEvent(new CustomEvent(s, { detail }))
-
       function apply (args) {
-        let result = target.apply(el, args)
+        console.log(Fn.name, 'APPLY', args)
+        const result = target.apply(el, args)
 
         if (result?.constructor.name === 'Promise') {
           result.then(res => collect(el, res)).catch(err => { throw err })
         } else if (result) {
           collect(el, result)
         }
-        el.dispatchEvent(new CustomEvent('updated', { detail: { element: el } }))
-      }
-
-      el.render = (updates) => {
-        el.innerHTML = ''
-        apply([{ ...args[0], ...updates }, ...children(args)])
+        el.dispatchEvent?.(new CustomEvent('updated', { detail: { element: el } }))
       }
 
       apply(args)
 
-      observables.push(el)
       return el
     }
   })
@@ -240,28 +258,41 @@ export async function createRoot (App, el) {
 
   try {
     root = await app()
-    el.appendChild(root)
   } catch (err) {
     throw new Error(err.message)
   }
 
-  const processNodes = (nodes, eventType) => {
-    for (const node of nodes) {
-      const index = observables.findIndex(el => el === node)
-      if (index == -1) continue
+  if (el) {
+    el.appendChild(root)
+  } else {
+    el = document.querySelector(App.name)
 
-      const el = observables[index]
-      el.dispatchEvent(new CustomEvent(eventType, { detail: { element: el } }))
-      if (eventType === 'disconnected') observables.splice(index, 1)
+    if (el) {
+      el.parentNode.replaceChild(root, el)
+    } else {
+      document.body.appendChild(root)
     }
   }
 
-  const observer = new MutationObserver(list => {
-    list.forEach(mut => {
-      if (mut.removedNodes) processNodes(mut.removedNodes, 'disconnected')
-      if (mut.addedNodes) processNodes(mut.addedNodes, 'connected')
-    })
-  })
+  if (globalThis.MutationObserver) {
+    const processNodes = (nodes, eventType) => {
+      for (const node of nodes) {
+        const index = observables.findIndex(el => el === node)
+        if (index === -1) continue
 
-  observer.observe(root, { childList: true, subtree: true, attributes: true, attributeOldValue: true })
+        const el = observables[index]
+        el.dispatchEvent(new CustomEvent(eventType, { detail: { element: el } }))
+        if (eventType === 'destroyed') observables.splice(index, 1)
+      }
+    }
+
+    const observer = new globalThis.MutationObserver(list => {
+      list.forEach(mut => {
+        if (mut.removedNodes) processNodes(mut.removedNodes, 'destroyed')
+        if (mut.addedNodes) processNodes(mut.addedNodes, 'ready')
+      })
+    })
+
+    observer.observe(root, { childList: true, subtree: true, attributes: true, attributeOldValue: true })
+  }
 }

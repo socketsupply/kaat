@@ -267,7 +267,7 @@ async function Messages (props) {
     const props = {
       ...message,
       timestamp: message.ts,
-      nick: dataClaim?.nick
+      nick: dataClaim?.nick ?? message.nick
     }
 
     if (message.isImage) {
@@ -395,6 +395,7 @@ async function Messages (props) {
     // let's save this one, we want it.
     const message = packetToMessage(packet)
     message.ts = value.ts || packet.meta.ts // use the unencrypted timestamp
+    message.nick = value.nick
 
     const { data: hasMessage } = await db.indexes.has(message.messageId)
     if (hasMessage) return
@@ -557,6 +558,9 @@ async function Messages (props) {
 
   const publishText = async (content) => {
     const { data: dataPeer } = await db.state.get('peer')
+    const publicKey = dataPeer.signingKeys.publicKey
+    const b64pk = Buffer.from(publicKey).toString('base64')
+    const { data: dataClaim } = await db.claims.get(b64pk)
     const { data: dataChannel } = await db.channels.get(dataPeer.channelId)
 
     const subcluster = net.subclusters[dataPeer.channelId]
@@ -573,6 +577,7 @@ async function Messages (props) {
 
     const message = {
       content,
+      nick: dataClaim.nick,
       ts,
       type: 'message'
     }
@@ -847,7 +852,7 @@ async function Messages (props) {
       button({ id: 'profile-open', data: { event: 'profile-open' } },
         svg({ class: 'app-icon' },
           use({ 'xlink:href': '#settings-icon' })
-        .scrollTop)
+        )
       )
     ),
 

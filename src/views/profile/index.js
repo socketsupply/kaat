@@ -315,6 +315,7 @@ async function Profile (props) {
           label: 'Nickname',
           pattern: '[a-zA-Z0-9_]+',
           data: { event: 'settings-nick' },
+          spellcheck: 'false',
           placeholder: 'Ace Quxx',
           value: nick
         }),
@@ -328,6 +329,7 @@ async function Profile (props) {
         Text({
           label: 'Status',
           data: { event: 'settings-status' },
+          spellcheck: 'false',
           value: status
         }),
         Text({
