@@ -224,7 +224,6 @@ export function register (Fn) {
       }
 
       function apply (args) {
-        console.log(Fn.name, 'APPLY', args)
         const result = target.apply(el, args)
 
         if (result?.constructor.name === 'Promise') {

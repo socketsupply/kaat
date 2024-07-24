@@ -52,10 +52,7 @@ export class Spring {
    * @param {Object} [opts={}] - Options for the animation.
    */
   constructor (el, opts = {}) {
-    if (!el) {
-      console.log(el)
-      throw new Error('Element requred')
-    }
+    if (!el) { throw new Error('Element requred') }
     if (el.axis) return
 
     this.el = el

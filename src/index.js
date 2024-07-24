@@ -168,7 +168,6 @@ async function App () {
     }
 
     if (el?.dataset.event === 'delete-channel') {
-      console.log(el.dataset.value)
     }
 
     /* if (el?.dataset.event === 'change-model') {

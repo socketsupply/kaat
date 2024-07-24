@@ -152,7 +152,7 @@ const network = async db => {
   // Don't listen to debug in production, it can strain the CPU.
   //
   socket.on('#debug', (pid, str, ...args) => {
-    pid = pid.slice(0, 6)
+    /* pid = pid.slice(0, 6)
 
     if (str.includes('JOIN')) {
       console.log(pid, str, ...args)
@@ -189,41 +189,6 @@ const network = async db => {
     if (str.includes('WRITE')) {
       console.log(pid, str, ...args)
     } */
-  })
-
-  //
-  // you decide on how much you want to sync, be careful not to get rate
-  // limited by other peers; the default rate is 1024 packets per minute.
-  //
-  const sync = {}
-
-  socket.on('#connection', (packet, peer) => {
-    //
-    // Sync is bidirectional, so it only needs to be initiated by one side.
-    // We select the lexicographically higher peerId to kick-off the sync.
-    //
-    const now = Date.now()
-    const key = [peer.address, peer.port].join(':')
-    let first = false
-
-    //
-    // If you've never sync'd before, you can ask for 6 hours of data from
-    // other peers. If we have synced with a peer before we can just ask for
-    // data that they have seen since then, this will avoid the risk of
-    // spamming them and getting rate-limited.
-    //
-    if (!sync[key]) {
-      sync[key] = now - socket.MAX_CACHE_TTL
-      first = true
-    }
-
-    const lastSyncSeconds = (now - sync[key]) / 1000
-
-    if (first || now - sync[key] > 6000) {
-      socket.sync(peer.peerId, sync[key])
-      console.log(`-> SYNC SEND (peerId=${peer.peerId.slice(0, 6)}, address=${key}, since=${lastSyncSeconds} seconds ago)`)
-      sync[key] = now
-    }
   })
 
   // socket.on('#packet', (...args) => console.log('PACKET', ...args))
