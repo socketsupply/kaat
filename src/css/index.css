@@ -40,6 +40,10 @@ body.loading {
   box-shadow: 0 50vh 0 0 var(--x-background);
 }
 
+body:not([platform="android"], [platform="linux"]) #main {
+  border-radius: 12px 12px 0 0;
+}
+
 aside {
   position: absolute;
   top: 0;
