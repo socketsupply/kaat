@@ -1,4 +1,4 @@
-import { register } from '../lib/component.js'
+import { component } from '../lib/component.js'
 
 function Avatar (props) {
   const MAGIC_NUMBER = 5
@@ -38,4 +38,4 @@ function Avatar (props) {
   )
 }
 
-export default register(Avatar)
+export default component(Avatar)

@@ -1,4 +1,4 @@
-import { register } from '../lib/component.js'
+import { component } from '../lib/component.js'
 
 function Group (props, ...children) {
   return [
@@ -7,4 +7,4 @@ function Group (props, ...children) {
   ]
 }
 
-export default register(Group)
+export default component(Group)

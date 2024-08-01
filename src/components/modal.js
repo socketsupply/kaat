@@ -1,4 +1,4 @@
-import { register } from '../lib/component.js'
+import { component } from '../lib/component.js'
 import Button from './button.js'
 
 function Modal (props, ...children) {
@@ -123,4 +123,4 @@ function Modal (props, ...children) {
   )
 }
 
-export default register(Modal)
+export default component(Modal)

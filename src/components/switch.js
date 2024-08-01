@@ -1,4 +1,4 @@
-import { register } from '../lib/component.js'
+import { component } from '../lib/component.js'
 
 function Switch (props) {
   return label(
@@ -7,4 +7,4 @@ function Switch (props) {
   )
 }
 
-export default register(Switch)
+export default component(Switch)

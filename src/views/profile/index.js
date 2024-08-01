@@ -1,4 +1,4 @@
-import { register } from '../../lib/component.js'
+import { component } from '../../lib/component.js'
 import { Spring } from '../../lib/spring.js'
 
 import Text from '../../components/text.js'
@@ -43,7 +43,7 @@ function PeerList (props) {
   return items
 }
 
-Profile.PeerList = register(PeerList)
+Profile.PeerList = component(PeerList)
 
 function PeerInfo (props) {
   let shortPeerId = 'Working...'
@@ -82,7 +82,7 @@ function PeerInfo (props) {
   )
 }
 
-Profile.PeerInfo = register(PeerInfo)
+Profile.PeerInfo = component(PeerInfo)
 
 function PeerMetrics (props) {
   props.i ??= []
@@ -142,7 +142,7 @@ function PeerMetrics (props) {
   )
 }
 
-Profile.PeerMetrics = register(PeerMetrics)
+Profile.PeerMetrics = component(PeerMetrics)
 
 async function Profile (props) {
   const {
@@ -346,4 +346,4 @@ async function Profile (props) {
   ]
 }
 
-export default register(Profile)
+export default component(Profile)

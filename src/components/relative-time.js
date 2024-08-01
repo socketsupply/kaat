@@ -1,4 +1,4 @@
-import { register } from '../lib/component.js'
+import { component } from '../lib/component.js'
 
 const T_YEARS = 1000 * 60 * 60 * 24 * 365
 const T_MONTHS = 1000 * 60 * 60 * 24 * 30
@@ -45,4 +45,4 @@ function RelativeTime (props) {
   this.textContent = o.value
 }
 
-export default register(RelativeTime)
+export default component(RelativeTime)

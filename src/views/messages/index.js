@@ -5,7 +5,7 @@ import os from 'socket:os'
 // import { LLM } from 'socket:ai'
 
 import { Compressor } from '../../lib/compressor.js'
-import { register } from '../../lib/component.js'
+import { component } from '../../lib/component.js'
 import { Spring } from '../../lib/spring.js'
 
 import Avatar from '../../components/avatar.js'
@@ -48,7 +48,7 @@ async function Message (props = {}) {
   ]
 }
 
-Messages.Message = register(Message)
+Messages.Message = component(Message)
 
 async function VirtualMessages (props) {
   const messages = props.rows.filter(Boolean)
@@ -122,7 +122,7 @@ async function VirtualMessages (props) {
   )
 }
 
-Messages.VirtualMessages = register(VirtualMessages)
+Messages.VirtualMessages = component(VirtualMessages)
 
 const fitMessages = () => {
   const remainingWidth = (100 - (
@@ -892,4 +892,4 @@ async function Messages (props) {
   ]
 }
 
-export default register(Messages)
+export default component(Messages)

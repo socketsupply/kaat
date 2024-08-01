@@ -1,6 +1,6 @@
 import Indexed from '@socketsupply/indexed'
 
-import { register } from '../../lib/component.js'
+import { component } from '../../lib/component.js'
 
 async function Channels (props) {
   const {
@@ -158,7 +158,7 @@ async function Channels (props) {
   }))
 }
 
-Sidebar.Channels = register(Channels)
+Sidebar.Channels = component(Channels)
 
 async function Sidebar (props) {
   const {
@@ -183,4 +183,4 @@ async function Sidebar (props) {
   ]
 }
 
-export default register(Sidebar)
+export default component(Sidebar)

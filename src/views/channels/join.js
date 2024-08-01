@@ -1,4 +1,4 @@
-import { register } from '../../lib/component.js'
+import { component } from '../../lib/component.js'
 import Modal from '../../components/modal.js'
 import Text from '../../components/text.js'
 
@@ -32,4 +32,4 @@ async function ModelJoinChannel (props) {
   )
 }
 
-export default register(ModelJoinChannel)
+export default component(ModelJoinChannel)

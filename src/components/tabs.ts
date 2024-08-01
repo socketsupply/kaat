@@ -1,4 +1,4 @@
-import { register } from '../lib/component.js'
+import { component } from '../lib/component.js'
 
 /*
  * Tabs(
@@ -50,19 +50,19 @@ function Tab (props, ...children) {
   return children
 }
 
-Tabs.Tab = register(Tab)
+Tabs.Tab = component(Tab)
 
 function Panel (props, ...children) {
   Object.assign(this, props)
   return children
 }
 
-Tabs.Panel = register(Panel)
+Tabs.Panel = component(Panel)
 
 //
 // As per React's "one component export per file",
 // only the Tabs module is exported, and the other
 // components are added to it, becoming namespaced.
 //
-export default register(Tabs)
+export default component(Tabs)
 

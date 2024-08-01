@@ -1,4 +1,4 @@
-import { register } from '../../lib/component.js'
+import { component } from '../../lib/component.js'
 import { Stream } from '../../lib/stream.js'
 import Modal from '../../components/modal.js'
 
@@ -22,7 +22,7 @@ async function AudioStream (props) {
   ]
 }
 
-AudioStreams.AudioStream = register(AudioStream)
+AudioStreams.AudioStream = component(AudioStream)
 
 async function AudioGrid (props) {
   return props.streams.map(stream => {
@@ -30,7 +30,7 @@ async function AudioGrid (props) {
   })
 }
 
-AudioStreams.AudioGrid = register(AudioGrid)
+AudioStreams.AudioGrid = component(AudioGrid)
 
 //
 // This is not re-rendered.
@@ -200,4 +200,4 @@ async function AudioStreams (props) {
   )
 }
 
-export default register(AudioStreams)
+export default component(AudioStreams)

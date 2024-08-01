@@ -9,7 +9,7 @@
  * - Components can return arrays or trees of dom nodes.
  * - Enforce React's one component export per file rule.
  * - Enforce React style component grouping/namespacing.
- * - Insde the component, 'this' is the dom element.
+ * - Inside the component, 'this' is the dom element.
  *
  */
 
@@ -21,14 +21,14 @@
  * List of HTML tags.
  * @type {string[]}
  */
-const tags = 'a,abbr,address,area,article,aside,audio,b,base,bdi,bdo,blockquote,body,br,button,canvas,caption,cite,code,col,colgroup,data,datalist,dd,del,details,dfn,dialog,div,dl,dt,em,embed,fieldset,figcaption,figure,footer,form,h1,h2,h3,h4,h5,h6,head,header,hr,html,i,iframe,img,input,ins,kbd,label,legend,li,link,main,map,mark,meta,meter,nav,noscript,object,ol,optgroup,option,output,p,param,picture,pre,progress,q,rp,rt,ruby,s,samp,script,section,select,small,source,span,strong,style,sub,summary,sup,svg,table,tbody,td,template,textarea,tfoot,th,thead,time,title,tr,track,u,ul,use,video,wbr'.split(',')
+const tags = 'a abbr address area article aside audio b base bdi bdo blockquote body br button canvas caption cite code col colgroup data datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 head header hr html i iframe img input ins kbd label legend li link main map mark meta meter nav noscript object ol optgroup option output p param picture pre progress q rp rt ruby s samp script section select small source span strong style sub summary sup svg table tbody td template textarea tfoot th thead time title tr track u ul use video wbr'.split(' ')
 
 /**
  * Matches an element to a selector.
  * @param {HTMLElement} el - The element to match.
  * @returns {Function} - A function that takes a selector string and returns the matching element or its closest ancestor.
  */
-const match = el => s => (el.matches ? el : el.parentElement).closest(s)
+const match = el => (s, p = el) => (p.matches ? p : p.parentElement).closest(s)
 
 /**
  * Provides SSR by implementing the dom methods that are missing outside the browser.
@@ -36,6 +36,10 @@ const match = el => s => (el.matches ? el : el.parentElement).closest(s)
 if (!globalThis.document) {
   globalThis.Node = class Node {
     children = []
+    dataset = {}
+    style = {}
+    state = {}
+    _eventListeners = []
     parentRef = null
     constructor (_type) {
       this._type = _type
@@ -116,6 +120,10 @@ const createElement = (t, ...args) => {
 
   const el = typeof t === 'string' ? globalThis.document.createElement(t) : t
 
+  if (globalThis.window && !el._eventListeners) {
+    el._eventListeners = []
+  }
+
   args.flat().forEach(c => {
     if (typeof c === 'string') {
       el.appendChild(globalThis.document.createTextNode(c))
@@ -126,15 +134,20 @@ const createElement = (t, ...args) => {
       }
       if (!globalThis.window) c.parentRef = el // emulate move semantics
       el.appendChild(c)
+      c.dispatchEvent?.(new CustomEvent('ready', { detail: { element: c, parentElement: el } }))
     } else if (typeof c === 'function' && c.name) {
       const eventName = c.name.slice(2).toLowerCase()
-      el.addEventListener(eventName, e => c(e, match(e.target)))
+      const listener = e => c(e, match(e.target))
+      el.addEventListener(eventName, listener)
+      el._eventListeners.push({ eventName, listener })
     } else if (typeof c === 'object' && c !== null) {
       Object.entries(c).forEach(([k, v]) => {
         if (typeof v === 'function') {
           const eventName = v.name.slice(2).toLowerCase()
-          el.addEventListener(eventName, e => v(e, match(e.target)))
-        } else if (k === 'style' && typeof v === 'object') {
+          const listener = e => v(e, match(e.target))
+          el.addEventListener(eventName, listener)
+          el._eventListeners.push({ eventName, listener })
+        } else if (el.style && k === 'style' && typeof v === 'object') {
           Object.assign(el.style, v)
         } else if (k === 'class') {
           if (el.tagName === 'svg') {
@@ -142,7 +155,7 @@ const createElement = (t, ...args) => {
           } else {
             el.className = v
           }
-        } else if (k === 'data') {
+        } else if (k === 'data' && typeof v === 'object') {
           Object.entries(v).forEach(a => (el.dataset[a[0]] = a[1]))
         } else if (el.tagName === 'use' || k === 'contenteditable') {
           if (k.includes('xlink')) {
@@ -150,6 +163,8 @@ const createElement = (t, ...args) => {
           } else {
             el.setAttribute(k, v)
           }
+        } else if (k === 'for') {
+          el.setAttribute('for', v)
         } else if (k in el || !globalThis.window) {
           el[k] = v
         }
@@ -173,10 +188,28 @@ const observables = []
  * @param {Object} obj - An object of components to register.
  * @returns {function}
  */
-export function register (Fn) {
-  const collect = (el, tree) => [tree].flat().forEach(node => el.appendChild(node))
-  const hyphenate = (name) => (name.match(/[A-Z][a-z0-9]*/g)?.join('-') ?? name).toLowerCase()
+function register (Fn) {
+  const collect = (el, tree, event) => {
+    [tree].flat().forEach(c => {
+      if (typeof c === 'function') {
+        if (c.name.slice(0, 2) === 'on') {
+          const eventName = c.name.slice(2).toLowerCase()
+          const listener = e => c(e, match(e.target))
+          el.addEventListener(eventName, listener)
+          el._eventListeners.push({ eventName, listener })
+        } else {
+          el[c.name] = c.bind(el)
+        }
+      } else if (c instanceof globalThis.Node) {
+        el.appendChild(c)
+      }
+    })
+    el.dispatchEvent && setTimeout(() => el.dispatchEvent(event))
+  }
+
   const children = (args) => args.flat().filter(a => a instanceof globalThis.Node)
+
+  Fn.tagName = (Fn.name.match(/[A-Z][a-z0-9]*/g)?.join('-') ?? Fn.name).toLowerCase()
 
   globalThis[Fn.name] = new Proxy(Fn, {
     /**
@@ -186,13 +219,21 @@ export function register (Fn) {
      * @param {Array} argumentsList - The list of arguments for the call to `target`.
      * @returns {Promise<HTMLElement>} - The created HTML element.
      */
-    apply: (target, self, args) => {
-      const el = createElement(hyphenate(Fn.name), ...args)
+    apply: (target, _, args) => {
+      const el = createElement(Fn.tagName, ...args)
       const id = args[0]?.id || el.id || Fn.name
       if (!register.state[id]) register.state[id] = {}
 
       if (globalThis.window) {
         el.render = (updates) => {
+          // Remove all event listeners before re-rendering
+          if (el._eventListeners) {
+            el._eventListeners.forEach(({ eventName, listener }) => {
+              el.removeEventListener(eventName, listener)
+            })
+            el._eventListeners = []
+          }
+
           el.innerHTML = ''
           apply([{ ...args[0], ...updates }, ...children(args)])
         }
@@ -214,10 +255,15 @@ export function register (Fn) {
         el.on = (s, fn) => {
           const listener = e => fn.apply(el, [e, match(e.target)])
           el.addEventListener(s, listener)
+          el._eventListeners.push({ eventName: s, listener })
           return listener
         }
 
-        el.off = (s, fn) => el.removeEventListener(s, fn)
+        el.off = (s, fn) => {
+          el.removeEventListener(s, fn)
+          el._eventListeners = el._eventListeners.filter(listener => listener.eventName !== s || listener.listener !== fn)
+        }
+
         el.emit = (s, detail) => el.dispatchEvent(new CustomEvent(s, { detail }))
 
         observables.push(el)
@@ -225,23 +271,24 @@ export function register (Fn) {
 
       function apply (args) {
         const result = target.apply(el, args)
+        const event = new CustomEvent('ready', { detail: { element: el } })
 
         if (result?.constructor.name === 'Promise') {
-          result.then(res => collect(el, res)).catch(err => { throw err })
+          result.then(res => collect(el, res, event))
         } else if (result) {
-          collect(el, result)
+          collect(el, result, event)
         }
-        el.dispatchEvent?.(new CustomEvent('updated', { detail: { element: el } }))
       }
 
       apply(args)
-
       return el
     }
   })
 
   return globalThis[Fn.name]
 }
+
+export { register, register as component }
 
 register.state = {}
 
@@ -251,29 +298,19 @@ register.state = {}
  * @param {HTMLElement} el - The element to append the root component to.
  * @returns {Promise<void>}
  */
-export async function createRoot (App, el) {
-  const app = register(App)
+function createRoot (Fn) {
+  const app = register(Fn)
   let root
 
-  try {
+  if (!globalThis.window) return app
+
+  globalThis.window.addEventListener('DOMContentLoaded', async () => {
+    const el = document.querySelector(Fn.tagName)
     root = await app()
-  } catch (err) {
-    throw new Error(err.message)
-  }
+    el ? el.parentNode.replaceChild(root, el) : document.body.appendChild(root)
 
-  if (el) {
-    el.appendChild(root)
-  } else {
-    el = document.querySelector(App.name)
+    if (!globalThis.MutationObserver) return
 
-    if (el) {
-      el.parentNode.replaceChild(root, el)
-    } else {
-      document.body.appendChild(root)
-    }
-  }
-
-  if (globalThis.MutationObserver) {
     const processNodes = (nodes, eventType) => {
       for (const node of nodes) {
         const index = observables.findIndex(el => el === node)
@@ -293,5 +330,7 @@ export async function createRoot (App, el) {
     })
 
     observer.observe(root, { childList: true, subtree: true, attributes: true, attributeOldValue: true })
-  }
+  })
 }
+
+export { createRoot, createRoot as root }

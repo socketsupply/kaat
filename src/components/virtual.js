@@ -1,4 +1,4 @@
-import { register } from '../lib/component.js'
+import { component } from '../lib/component.js'
 
 function Virtual (props) {
   this.prependCounter = 0
@@ -513,4 +513,4 @@ function Virtual (props) {
   )
 }
 
-export default register(Virtual)
+export default component(Virtual)

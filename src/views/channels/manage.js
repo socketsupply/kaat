@@ -1,4 +1,4 @@
-import { register } from '../../lib/component.js'
+import { component } from '../../lib/component.js'
 import Modal from '../../components/modal.js'
 import Text from '../../components/text.js'
 
@@ -69,4 +69,4 @@ async function ModelManageChannel (props) {
   )
 }
 
-export default register(ModelManageChannel)
+export default component(ModelManageChannel)

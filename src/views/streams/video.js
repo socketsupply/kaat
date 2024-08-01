@@ -1,4 +1,4 @@
-import { register } from '../../lib/component.js'
+import { component } from '../../lib/component.js'
 import Modal from '../../components/modal.js'
 
 //
@@ -19,7 +19,7 @@ async function VideoGrid (props) {
   ]
 }
 
-VideoStreams.VideoGrid = register(VideoGrid)
+VideoStreams.VideoGrid = component(VideoGrid)
 
 async function VideoStreams (props) {
   return Modal(
@@ -36,4 +36,4 @@ async function VideoStreams (props) {
   )
 }
 
-export default register(VideoStreams)
+export default component(VideoStreams)

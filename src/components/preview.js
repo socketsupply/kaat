@@ -1,4 +1,4 @@
-import { register } from '../lib/component.js'
+import { component } from '../lib/component.js'
 
 function Preview (props, ...children) {
   let escapeListener
@@ -74,4 +74,4 @@ function Preview (props, ...children) {
   )
 }
 
-export default register(Preview)
+export default component(Preview)
