@@ -7,11 +7,15 @@
   background: var(--x-window);
   z-index: 4;
   will-change: transform;
-  border-radius: 12px 12px 0 0;
   box-shadow: 0px 0px 24px -10px rgba(0, 0, 0, 1);
   padding-bottom: 50px;
   display: grid;
   grid-template-rows: auto 1fr;
+}
+
+body[platform="ios"],
+body[platform="darwin"]) #profile {
+  border-radius: 12px 12px 0 0;
 }
 
 #profile > header {

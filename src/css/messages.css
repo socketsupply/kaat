@@ -81,7 +81,7 @@
     z-index: 2;
     line-height: 22px;
     max-height: 250px;
-    overflow: scroll;
+    overflow: hidden;
   }
 
   #input #send-message {
