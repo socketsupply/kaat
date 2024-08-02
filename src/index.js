@@ -85,15 +85,6 @@ async function App () {
         Delete: _
         Select All: a + CommandOrControl
       ;
-
-      View:
-        Toggle Panel: k + CommandOrControl
-        Toggle Console: p + CommandOrControl
-      ;
-
-      Upload:
-        Attachment...: _
-      ;
     `
 
     await application.setSystemMenu({ index: 0, value: menu })
