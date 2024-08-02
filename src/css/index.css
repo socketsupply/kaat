@@ -33,7 +33,6 @@ body.loading {
   left: 0;
   bottom: 0;
   right: 0;
-  border-radius: 12px 12px 0 0;
   overflow: hidden;
   will-change: transform, height;
   background: var(--x-background);
@@ -133,7 +132,7 @@ body[platform="darwin"] button#sidebar-toggle {
   z-index: 3;
 }
 
-body[platform="win"] {
+body[platform="win32"] {
   /* Scrollbar container */
   ::-webkit-scrollbar {
     width: 6px;               /* Width of the scrollbar */
