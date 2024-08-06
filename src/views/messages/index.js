@@ -149,7 +149,7 @@ async function Messages (props) {
 
   let isPanning = false
   let lastContent = null
-  let sidebarWidth = 280
+  const sidebarWidth = 280
   let lastKeyRead = null
 
   //
@@ -214,8 +214,8 @@ async function Messages (props) {
       }
 
       if (isPanning) {
-        const dx = this.clientX - this.startX;
-        this.updatePosition('X', Math.max(0, Math.min(dx, 280)));
+        const dx = this.clientX - this.startX
+        this.updatePosition('X', Math.max(0, Math.min(dx, 280)))
       }
     },
     end: function (event) {
@@ -315,7 +315,7 @@ async function Messages (props) {
 
   const { data: dataPeer } = await db.state.get('peer')
   const { data: dataChannel } = await db.channels.get(dataPeer.channelId)
- 
+
   const elChannels = document.querySelector('channels')
 
   const insertNode = (parent, timestamp, child) => {
@@ -347,8 +347,8 @@ async function Messages (props) {
     })
 
     if (dataMessages) {
-      let keys = [...dataMessages.keys()]
-      let values = [...dataMessages.values()]
+      const keys = [...dataMessages.keys()]
+      const values = [...dataMessages.values()]
 
       lastKeyRead = keys.at(-1)
 
@@ -629,7 +629,7 @@ async function Messages (props) {
       opts.meta.mime = fileInfo.type
       opts.meta.hash = await sha256(bytes)
       opts.meta.ts = Date.now()
-      opts.meta.name = fileInfo.pathname 
+      opts.meta.name = fileInfo.pathname
     } catch (err) {
       console.warn(err.message)
       return
@@ -675,14 +675,14 @@ async function Messages (props) {
       }
     }
   }
-  
+
   const onSendFile = async () => {
     const pickerOpts = {
       types: [
         {
           description: 'Select an Image',
           accept: {
-            'image/*': ['.png', '.gif', '.jpeg', '.jpg'],
+            'image/*': ['.png', '.gif', '.jpeg', '.jpg']
           }
         }
       ],
@@ -706,7 +706,7 @@ async function Messages (props) {
     // TODO(@heapwolf): should be fast but provide some ui feedback anyway, spinner maybe.
     await publishImages()
 
-    let data = elInputMessage.innerText.trim()
+    const data = elInputMessage.innerText.trim()
 
     if (!data.length) {
       elInputMessage.innerHTML = ''

@@ -116,7 +116,7 @@ async function App () {
   // Pretty much a global click handler for anything in the app.
   //
 
-  const onclick = async (event, match) => { 
+  const onclick = async (event, match) => {
     const el = match('[data-event]')
 
     if (el?.dataset.event === 'sidebar-toggle') {
@@ -142,7 +142,7 @@ async function App () {
 
       const elModal = document.getElementById('create-channel')
 
-      elModal.value = { 'accessToken': crypto.randomUUID() }
+      elModal.value = { accessToken: crypto.randomUUID() }
 
       const res = await elModal.open()
 

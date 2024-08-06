@@ -58,7 +58,7 @@ function Modal (props, ...children) {
 
   this.open = async () => {
     if (this.promise) this.resolve()
-    
+
     const { promise, resolve } = Promise.withResolvers()
     this.resolve = resolve
     this.promise = promise

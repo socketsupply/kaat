@@ -42,7 +42,7 @@ async function Channels (props) {
 
       dataPeer.channelId = newChannel.channelId
       dataPeer.subclusterId = newChannel.subclusterId
-      
+
       await db.state.put('peer', dataPeer)
 
       this.render()

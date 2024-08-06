@@ -55,15 +55,15 @@ function Text (props, ...children) {
     wrapper.style.display = 'block'
   }
 
-  this.on('focusin', event => {
+  const onfocusin = event => {
     this.dispatchEvent(new window.CustomEvent('focus', { bubbles: true }))
-  })
+  }
 
-  this.on('focusout', event => {
+  const onfocusout = event => {
     this.dispatchEvent(new window.CustomEvent('blur', { bubbles: true }))
-  })
+  }
 
-  this.on('input', event => {
+  const oninput = event => {
     state.edited = true
     this.setAttribute('edited', true)
     state.value = event.target.value
@@ -74,7 +74,7 @@ function Text (props, ...children) {
     if (!event.target.checkValidity()) {
       this.setInvalid(props.errorMessage)
     }
-  })
+  }
 
   this.focus(state.pos)
 
@@ -85,7 +85,11 @@ function Text (props, ...children) {
     ...styleInput
   }
 
-  return (
+  return [
+    oninput,
+    onfocusout,
+    onfocusin,
+
     div({ class: 'wrapper', style: styleWrapper },
       props.label && label(props.label),
       props.icon && button({ class: 'icon', data: { event: props.iconEvent } },
@@ -98,7 +102,7 @@ function Text (props, ...children) {
         span({ id: `x--text-error-${props.id}` }, props.errorMessage)
       )
     )
-  )
+  ]
 }
 
 export default component(Text)

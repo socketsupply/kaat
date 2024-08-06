@@ -14,21 +14,24 @@
  */
 
 /**
- * @typedef {('a'|'abbr'|'address'|'area'|'article'|'aside'|'audio'|'b'|'base'|'bdi'|'bdo'|'blockquote'|'body'|'br'|'button'|'canvas'|'caption'|'cite'|'code'|'col'|'colgroup'|'data'|'datalist'|'dd'|'del'|'details'|'dfn'|'dialog'|'div'|'dl'|'dt'|'em'|'embed'|'fieldset'|'figcaption'|'figure'|'footer'|'form'|'h1'|'h2'|'h3'|'h4'|'h5'|'h6'|'head'|'header'|'hr'|'html'|'i'|'iframe'|'img'|'input'|'ins'|'kbd'|'label'|'legend'|'li'|'link'|'main'|'map'|'mark'|'meta'|'meter'|'nav'|'noscript'|'object'|'ol'|'optgroup'|'option'|'output'|'p'|'param'|'picture'|'pre'|'progress'|'q'|'rp'|'rt'|'ruby'|'s'|'samp'|'script'|'section'|'select'|'small'|'source'|'span'|'strong'|'style'|'sub'|'summary'|'sup'|'svg'|'table'|'tbody'|'td'|'template'|'textarea'|'tfoot'|'th'|'thead'|'time'|'title'|'tr'|'track'|'u'|'ul'|'use'|'video'|'wbr')} HTMLTag
+ * @typedef {('a'|'abbr'|'address'|'area'|'article'|'aside'|'audio'|'b'|'base'|'bdi'|'bdo'|'blockquote'|'body'|'br'|'button'|'canvas'|'caption'|'cite'|'code'|'col'|'colgroup'|'data'|'datalist'|'dd'|'del'|'details'|'dfn'|'dialog'|'div'|'dl'|'dt'|'em'|'embed'|'fieldset'|'figcaption'|'figure'|'footer'|'form'|'h1'|'h2'|'h3'|'h4'|'h5'|'h6'|'head'|'header'|'hr'|'html'|'i'|'iframe'|'img'|'input'|'ins'|'kbd'|'label'|'legend'|'li'|'link'|'main'|'map'|'mark'|'meta'|'meter'|'nav'|'noscript'|'object'|'ol'|'optgroup'|'option'|'output'|'p'|'param'|'picture'|'pre'|'progress'|'q'|'rp'|'rt'|'ruby'|'s'|'samp'|'script'|'section'|'select'|'small'|'source'|'span'|'strong'|'style'|'sub'|'summary'|'sup'|'svg'|'path'|'table'|'tbody'|'td'|'template'|'textarea'|'tfoot'|'th'|'thead'|'time'|'title'|'tr'|'track'|'u'|'ul'|'use'|'video'|'wbr')} HTMLTag
  */
 
 /**
  * List of HTML tags.
  * @type {string[]}
  */
-const tags = 'a abbr address area article aside audio b base bdi bdo blockquote body br button canvas caption cite code col colgroup data datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 head header hr html i iframe img input ins kbd label legend li link main map mark meta meter nav noscript object ol optgroup option output p param picture pre progress q rp rt ruby s samp script section select small source span strong style sub summary sup svg table tbody td template textarea tfoot th thead time title tr track u ul use video wbr'.split(' ')
+const tags = 'a abbr address area article aside audio b base bdi bdo blockquote body br button canvas caption cite code col colgroup data datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 head header hr html i iframe img input ins kbd label legend li link main map mark meta meter nav noscript object ol optgroup option output p param picture pre progress q rp rt ruby s samp script section select small source span strong style sub summary sup svg path table tbody td template textarea tfoot th thead time title tr track u ul use video wbr'.split(' ')
 
 /**
  * Matches an element to a selector.
  * @param {HTMLElement} el - The element to match.
  * @returns {Function} - A function that takes a selector string and returns the matching element or its closest ancestor.
  */
-const match = el => (s, p = el) => (p.matches ? p : p.parentElement).closest(s)
+const _match = (p, s) => (p.matches ? p : p.parentElement).closest(s)
+const match = el => s => _match(el, s)
+
+export { _match as match }
 
 /**
  * Provides SSR by implementing the dom methods that are missing outside the browser.
@@ -188,7 +191,7 @@ const observables = []
  * @param {Object} obj - An object of components to register.
  * @returns {function}
  */
-function register (Fn) {
+function component (Fn) {
   const collect = (el, tree, event) => {
     [tree].flat().forEach(c => {
       if (typeof c === 'function') {
@@ -222,7 +225,7 @@ function register (Fn) {
     apply: (target, _, args) => {
       const el = createElement(Fn.tagName, ...args)
       const id = args[0]?.id || el.id || Fn.name
-      if (!register.state[id]) register.state[id] = {}
+      if (!component.state[id]) component.state[id] = {}
 
       if (globalThis.window) {
         el.render = (updates) => {
@@ -238,7 +241,7 @@ function register (Fn) {
           apply([{ ...args[0], ...updates }, ...children(args)])
         }
 
-        el.state = new Proxy(register.state[id], { // re-render when state is updated.
+        el.state = new Proxy(component.state[id], { // re-render when state is updated.
           set (target, property, value) {
             let isUpdate = false
             if (property in target) isUpdate = true
@@ -288,9 +291,9 @@ function register (Fn) {
   return globalThis[Fn.name]
 }
 
-export { register, register as component }
+export { component }
 
-register.state = {}
+component.state = {}
 
 /**
  * Creates the root component and appends it to the specified element.
@@ -299,7 +302,7 @@ register.state = {}
  * @returns {Promise<void>}
  */
 function createRoot (Fn) {
-  const app = register(Fn)
+  const app = component(Fn)
   let root
 
   if (!globalThis.window) return app

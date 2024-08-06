@@ -17,6 +17,7 @@
   "devDependencies": {
     "@socketsupply/socket": "^0.5.4",
     "@types/node": "^20.14.10",
-    "eslint": "^9.7.0"
+    "eslint": "^9.7.0",
+    "standard": "^17.1.0"
   }
 }

@@ -172,7 +172,7 @@ export class Stream {
     }
   }
 
-  startAnalyzingNode() {
+  startAnalyzingNode () {
     if (this.analysisInterval) {
       clearInterval(this.analysisInterval)
     }

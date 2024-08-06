@@ -5,7 +5,7 @@ const network = async db => {
   let { data: dataPeer, err: errPeer } = await db.state.get('peer')
 
   let socket
-  let subclusters = {}
+  const subclusters = {}
 
   const createChannel = async (channel) => {
     // Create a shared key from from the access token
@@ -62,8 +62,8 @@ const network = async db => {
     socket = await createNetwork(dataPeer)
 
     const modelDefaults = {
-      path: `model.gguf`,
-      prompt: `<s>[INST]You're a coding assistant focused on Web Development. You try to provide concise answers about html, css, and javascript questions.[/INST]</s>`,
+      path: 'model.gguf',
+      prompt: '<s>[INST]You\'re a coding assistant focused on Web Development. You try to provide concise answers about html, css, and javascript questions.[/INST]</s>',
       chatml: false,
       conversation: true,
       // repeat_penalty: '1.1',
@@ -75,7 +75,7 @@ const network = async db => {
     //
     // Random channel data for first-timers to share with friends.
     //
-    let channels = [
+    const channels = [
       {
         accessToken: crypto.randomUUID(),
         label: 'work',
@@ -165,7 +165,7 @@ const network = async db => {
 
     if (str.includes('CONN')) {
       console.log(pid, str, ...args)
-    }   
+    }
 
     if (str.includes('<- STREAM')) {
       console.log(pid, str, ...args)

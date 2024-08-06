@@ -1,4 +1,4 @@
-import Indexed from '@socketsupply/indexed'
+import { Indexed } from '@socketsupply/indexed'
 import application from 'socket:application'
 
 //
@@ -36,4 +36,3 @@ const database = async () => {
 }
 
 export { database }
-

@@ -1,6 +1,6 @@
 import { component } from '../lib/component.js'
 
-function Button(props) {
+function Button (props) {
   this.setAttribute('type', props.type || 'default')
   Object.assign(this, props)
 }

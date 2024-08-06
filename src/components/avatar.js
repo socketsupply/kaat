@@ -5,8 +5,8 @@ function Avatar (props) {
   const userColors = {}
   const bg = userColors[props.nick] ??= Math.floor(Math.random() * 20)
 
-  function createIcon(id = 'anonymous') {
-    const hash = id.split('').reduce((hash, char) => 
+  function createIcon (id = 'anonymous') {
+    const hash = id.split('').reduce((hash, char) =>
       (hash ^ char.charCodeAt(0)) * -MAGIC_NUMBER, MAGIC_NUMBER) >>> 2
 
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')

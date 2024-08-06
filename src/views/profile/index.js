@@ -8,12 +8,12 @@ function PeerList (props) {
 
   if (!props.net?.subclusters) {
     // TODO(@heapwolf): make the empty state look good.
-    return div({ class: 'empty-state' }, 'Empty') 
+    return div({ class: 'empty-state' }, 'Empty')
   }
 
   for (const subcluster of Object.values(props.net.subclusters)) {
     const scid = subcluster.subclusterId.toString('base64')
-    let rows = []
+    const rows = []
 
     for (const peer of [...subcluster.peers.values()]) {
       rows.push(
@@ -181,7 +181,7 @@ async function Profile (props) {
   if (dataPeer) {
     const publicKey = dataPeer.signingKeys.publicKey
     b64pk = Buffer.from(publicKey).toString('base64')
-    
+
     const { data: dataClaim } = await db.claims.get(b64pk)
 
     nick = dataClaim?.nick
@@ -215,7 +215,7 @@ async function Profile (props) {
 
       if (!isMobile) {
         document.body.style.background = `rgba(0, 0, 0, ${Math.min(1, Math.max(0, opacity))})`
-        elMain.style.opacity = 1.2 - opacity 
+        elMain.style.opacity = 1.2 - opacity
       }
 
       elMain.style.transform = `scale(${Math.min(scale, 1)})`
@@ -244,7 +244,7 @@ async function Profile (props) {
 
       if (Math.abs(finalPosition) < threshold) {
         // If not dragged past the threshold, start the spring animation to snap back
-        this.moveTo(vProfilePositionTop)  // Snap back to the original position
+        this.moveTo(vProfilePositionTop) // Snap back to the original position
       } else {
         // If dragged past the threshold, start the spring animation to dismiss or finalize the action
         this.moveTo(window.innerHeight) // Or any other final position based on your use case
