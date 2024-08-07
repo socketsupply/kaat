@@ -695,7 +695,7 @@ async function Messages (props) {
 
     const file = await fileHandle.getFile()
     const pathname = fileHandle.name
-    const type = await mime.lookup(pathname)
+    const type = file.type ? file.type : (await mime.lookup(pathname))[0]?.mime
     const buf = await file.arrayBuffer()
     publishImage(buf, { type, pathname })
   }
