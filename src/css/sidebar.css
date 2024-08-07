@@ -22,7 +22,7 @@ body[hardware="mobile"] {
 #sidebar {
   position: absolute;
   top: 0;
-  height: 100vh;
+  height: 90vh;
   width: 100vw;
   background-color: red;
   transform: scale(0.95);
