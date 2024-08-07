@@ -104,7 +104,7 @@ body:not([platform="win32"]) {
 }
 
 body[platform="win32"] {
-  .overlay:hover, header.draggable:hover {
+  header.draggable:hover {
     app-region: drag;
     --app-region: drag;
     user-select: none;
