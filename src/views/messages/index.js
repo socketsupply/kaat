@@ -161,7 +161,7 @@ async function Messages (props) {
     absolute: true,
     position: function (pos) {
       const progress = pos / sidebarWidth
-      const scale = 0.95 + 0.05 * progress
+      const scale = 0.9 + 0.05 * progress
       const opacity = 0.0 + 1 * progress
 
       if (!isMobile) {
@@ -177,7 +177,7 @@ async function Messages (props) {
       if (!elSidebar) elSidebar = document.getElementById('sidebar')
       elSidebar.style.transform = `scale(${Math.min(scale, 1)})`
       elSidebar.style.opacity = opacity
-      elSidebar.style.transformOrigin = '20% 70%'
+      elSidebar.style.transformOrigin = '20% 80%'
 
       if (pos > 10) {
         document.body.classList.add('moving')
